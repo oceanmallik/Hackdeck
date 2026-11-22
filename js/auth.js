@@ -31,12 +31,16 @@
   const avatarUrlInput = document.getElementById('avatarUrlInput');
   const usernameInputWrapper = document.getElementById('usernameInputWrapper');
   const usernameValidationMsg = document.getElementById('usernameValidationMsg');
+  const usernameSuggestionsList = document.getElementById('usernameSuggestionsList');
+  const suggestionsWrapper = document.getElementById('suggestionsWrapper');
   const modalErrorBanner = document.getElementById('modalErrorBanner');
   const modalErrorMessage = document.getElementById('modalErrorMessage');
   const btnSubmitProfile = document.getElementById('btnSubmitProfile');
   const previewModalAvatar = document.getElementById('previewModalAvatar');
   const previewModalName = document.getElementById('previewModalName');
   const previewModalEmail = document.getElementById('previewModalEmail');
+
+  let availabilityTimeout = null;
 
   const toastContainer = document.getElementById('toastContainer');
 
@@ -125,6 +129,19 @@
   }
 
   /**
+   * Escape HTML entities for safe DOM rendering
+   */
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  /**
    * Generate an SVG data URI avatar placeholder with user initial
    */
   function getInitialsAvatarSvg(name, size = 32) {
@@ -195,66 +212,205 @@
   }
 
   /**
-   * Derive a valid username slug from Google metadata
+   * Derive candidate username suggestions strictly prioritizing user's email ID
    */
-  function deriveSuggestedUsername(name, email) {
-    const raw = (name || (email ? email.split('@')[0] : 'hacker')).trim();
-    let cleaned = raw
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '_')
-      .replace(/_{2,}/g, '_')
-      .replace(/^_+|_+$/g, '');
+  function generateUsernameSuggestions(email, name) {
+    const suggestions = new Set();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const emailPrefix = cleanEmail.split('@')[0] || '';
 
-    if (cleaned.length < 3) {
-      cleaned = (cleaned + '_dev').replace(/^_+/, '');
-      while (cleaned.length < 3) cleaned += '1';
+    if (emailPrefix) {
+      // 1. Raw email prefix with invalid chars converted to underscores
+      const s1 = emailPrefix.replace(/[^a-z0-9_]/g, '_').replace(/_{2,}/g, '_').replace(/^_+|_+$/g, '');
+      if (s1.length >= 3 && s1.length <= 20) suggestions.add(s1);
+
+      // 2. Pure alphanumeric (dots/dashes/underscores removed)
+      const s2 = emailPrefix.replace(/[^a-z0-9]/g, '');
+      if (s2.length >= 3 && s2.length <= 20) suggestions.add(s2);
+
+      // 3. First segment before any dot/dash/underscore/digit
+      const firstSegment = emailPrefix.split(/[._\-\d]/)[0];
+      if (firstSegment && firstSegment.length >= 3 && firstSegment.length <= 16) {
+        suggestions.add(firstSegment);
+        suggestions.add(`${firstSegment}_dev`);
+      }
+
+      // 4. Short email with dev suffix
+      if (s1.length >= 3 && s1.length <= 15) {
+        suggestions.add(`${s1}_dev`);
+      }
     }
-    return cleaned.substring(0, 20);
+
+    // 5. Fallback from display name if fewer than 3 suggestions
+    if (suggestions.size < 3 && name) {
+      const nameClean = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (nameClean.length >= 3 && nameClean.length <= 20) {
+        suggestions.add(nameClean);
+      }
+      const nameUnderscore = name.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_{2,}/g, '_').replace(/^_+|_+$/g, '');
+      if (nameUnderscore.length >= 3 && nameUnderscore.length <= 20) {
+        suggestions.add(nameUnderscore);
+      }
+    }
+
+    // Filter valid handles matching USERNAME_REGEX
+    const validList = Array.from(suggestions).filter(s => USERNAME_REGEX.test(s));
+
+    // Ensure we always have at least 1 valid suggestion
+    if (validList.length === 0) {
+      const fallback = (emailPrefix.replace(/[^a-z0-9]/g, '') || 'hacker').substring(0, 15);
+      validList.push(`${fallback || 'dev'}_1`);
+    }
+
+    return validList.slice(0, 4);
+  }
+
+  /**
+   * Render clickable username suggestion chips
+   */
+  function renderUsernameSuggestions(suggestions, currentVal) {
+    if (!usernameSuggestionsList) return;
+    usernameSuggestionsList.innerHTML = '';
+
+    if (!suggestions || suggestions.length === 0) {
+      if (suggestionsWrapper) suggestionsWrapper.classList.add('hidden');
+      return;
+    }
+
+    if (suggestionsWrapper) suggestionsWrapper.classList.remove('hidden');
+
+    suggestions.forEach(s => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `suggestion-chip ${s === currentVal ? 'active' : ''}`;
+      chip.setAttribute('data-username', s);
+      chip.textContent = `@${s}`;
+      chip.addEventListener('click', () => {
+        if (usernameInput) {
+          usernameInput.value = s;
+          document.querySelectorAll('.suggestion-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          validateUsernameFormat(s);
+          checkUsernameAvailabilityDebounced(s);
+          usernameInput.focus();
+        }
+      });
+      usernameSuggestionsList.appendChild(chip);
+    });
+  }
+
+  /**
+   * Check real-time username availability against Supabase profiles table
+   */
+  async function checkUsernameAvailability(username) {
+    if (!username || !USERNAME_REGEX.test(username) || !window.supabaseClient) return;
+
+    try {
+      const { data, error } = await window.supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (error) return;
+
+      // Ensure input value hasn't changed while awaiting response
+      if (usernameInput && usernameInput.value.trim().toLowerCase() !== username) return;
+
+      if (data && (!currentUser || data.id !== currentUser.id)) {
+        if (usernameInputWrapper) {
+          usernameInputWrapper.classList.remove('is-valid');
+          usernameInputWrapper.classList.add('is-invalid');
+        }
+        if (usernameValidationMsg) {
+          usernameValidationMsg.className = 'form-helper error-text';
+          usernameValidationMsg.textContent = `✕ @${username} is already taken`;
+        }
+      } else {
+        if (usernameInputWrapper) {
+          usernameInputWrapper.classList.remove('is-invalid');
+          usernameInputWrapper.classList.add('is-valid');
+        }
+        if (usernameValidationMsg) {
+          usernameValidationMsg.className = 'form-helper success-text';
+          usernameValidationMsg.textContent = `✓ @${username} is available`;
+        }
+      }
+    } catch (err) {
+      console.warn('Availability check error:', err);
+    }
+  }
+
+  function checkUsernameAvailabilityDebounced(username) {
+    clearTimeout(availabilityTimeout);
+    if (!username || !USERNAME_REGEX.test(username)) return;
+    availabilityTimeout = setTimeout(() => {
+      checkUsernameAvailability(username);
+    }, 250);
   }
 
   /**
    * Open the blocking onboarding modal
    */
   function openOnboardingModal(user) {
-    const meta = user.user_metadata || {};
-    const googleIdentity = user.identities?.find(i => i.provider === 'google')?.identity_data || {};
-    const displayName = meta.full_name || meta.name || googleIdentity.full_name || googleIdentity.name || (user.email ? user.email.split('@')[0] : 'Hacker');
-    const avatarUrl = meta.avatar_url || meta.picture || googleIdentity.avatar_url || googleIdentity.picture || '';
-    const suggestedUsername = deriveSuggestedUsername(displayName, user.email);
+    if (!onboardingModal) return;
 
-    // Pre-fill form inputs
-    usernameInput.value = suggestedUsername;
-    displayNameInput.value = displayName;
-    avatarUrlInput.value = avatarUrl;
-
-    // Pre-fill visual user summary inside modal
-    if (previewModalName) previewModalName.textContent = displayName;
-    if (previewModalEmail) previewModalEmail.textContent = user.email || '';
-    if (previewModalAvatar) {
-      previewModalAvatar.referrerPolicy = 'no-referrer';
-      previewModalAvatar.onerror = function () {
-        this.onerror = null;
-        this.src = getInitialsAvatarSvg(displayName, 48);
-      };
-      if (avatarUrl) {
-        previewModalAvatar.src = avatarUrl;
-      } else {
-        previewModalAvatar.src = getInitialsAvatarSvg(displayName, 48);
-      }
-    }
-
-    // Reset error banner
-    modalErrorBanner.classList.add('hidden');
-    modalErrorMessage.textContent = '';
-
-    // Trigger validation styling
-    validateUsernameFormat(suggestedUsername);
-
-    // Reveal modal and hide unneeded page sections
+    // Immediately unhide modal so it is guaranteed visible
     onboardingModal.classList.remove('hidden');
-    heroSection.classList.add('hidden');
-    dashboardContainer.classList.add('hidden');
+    if (heroSection) heroSection.classList.add('hidden');
+    if (dashboardContainer) dashboardContainer.classList.add('hidden');
+
+    try {
+      user = user || currentUser || {};
+      const meta = user.user_metadata || {};
+      const identities = Array.isArray(user.identities) ? user.identities : [];
+      const googleIdentity = identities.find(i => i.provider === 'google')?.identity_data || {};
+      const email = user.email || meta.email || googleIdentity.email || '';
+      const displayName = meta.full_name || meta.name || googleIdentity.full_name || googleIdentity.name || (email ? email.split('@')[0] : 'Hacker');
+      const avatarUrl = meta.avatar_url || meta.picture || googleIdentity.avatar_url || googleIdentity.picture || '';
+
+      // Derive email-first suggestions
+      const suggestions = generateUsernameSuggestions(email, displayName);
+      const suggestedUsername = suggestions[0] || 'hacker_1';
+
+      // Pre-fill form inputs
+      if (usernameInput) usernameInput.value = suggestedUsername;
+      if (displayNameInput) displayNameInput.value = displayName;
+      if (avatarUrlInput) avatarUrlInput.value = avatarUrl;
+
+      // Render suggestion chips
+      renderUsernameSuggestions(suggestions, suggestedUsername);
+
+      // Pre-fill visual user summary inside modal
+      if (previewModalName) previewModalName.textContent = displayName;
+      if (previewModalEmail) previewModalEmail.textContent = email || 'user@example.com';
+      if (previewModalAvatar) {
+        previewModalAvatar.referrerPolicy = 'no-referrer';
+        previewModalAvatar.onerror = function () {
+          this.onerror = null;
+          this.src = getInitialsAvatarSvg(displayName, 48);
+        };
+        if (avatarUrl) {
+          previewModalAvatar.src = avatarUrl;
+        } else {
+          previewModalAvatar.src = getInitialsAvatarSvg(displayName, 48);
+        }
+      }
+
+      // Reset error banner
+      if (modalErrorBanner) modalErrorBanner.classList.add('hidden');
+      if (modalErrorMessage) modalErrorMessage.textContent = '';
+
+      // Trigger validation & availability check
+      validateUsernameFormat(suggestedUsername);
+      checkUsernameAvailabilityDebounced(suggestedUsername);
+    } catch (err) {
+      console.error('Error populating onboarding modal:', err);
+    }
   }
+
+  window.openOnboardingModal = openOnboardingModal;
+  window.checkUserProfile = checkUserProfile;
 
   /**
    * Hide the blocking modal
@@ -471,9 +627,25 @@
     // Live validation for @username input
     if (usernameInput) {
       usernameInput.addEventListener('input', (e) => {
-        // Enforce lowercase
+        // Enforce lowercase and underscore replacing spaces
         e.target.value = e.target.value.toLowerCase().replace(/\s+/g, '_');
-        validateUsernameFormat(e.target.value);
+        const val = e.target.value.trim();
+
+        // Sync active state on suggestion chips
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+          if (chip.getAttribute('data-username') === val) {
+            chip.classList.add('active');
+          } else {
+            chip.classList.remove('active');
+          }
+        });
+
+        const isValid = validateUsernameFormat(val);
+        if (isValid) {
+          checkUsernameAvailabilityDebounced(val);
+        } else {
+          clearTimeout(availabilityTimeout);
+        }
       });
     }
 
