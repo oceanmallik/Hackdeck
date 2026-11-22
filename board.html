@@ -55,6 +55,18 @@
             <span id="phaseBadgeText">Brainstorm Phase</span>
           </span>
 
+          <!-- Leader Submit Button (Prominent, alongside Phase Badge) -->
+          <button id="btnMarkSubmitted" class="btn btn-emerald btn-sm hidden" title="Mark project as finished and submitted for judging">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Mark as Submitted</span>
+          </button>
+
+          <!-- Leader Reopen Build Button (Subtle, visible when submitted) -->
+          <button id="btnReopenBuild" class="btn btn-outline btn-sm hidden" title="Reopen build phase for last-minute edits before event deadline">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+            <span>Reopen Build Phase</span>
+          </button>
+
           <!-- Spectator Mode Badge -->
           <span id="spectatorBadge" class="badge-spectator hidden">
             <span>👁️</span>
@@ -358,74 +370,7 @@
           </div>
         </div>
 
-        <!-- 4-Column GitHub Projects Style Kanban Board -->
-        <div class="kanban-board" id="kanbanBoard">
-          <!-- Column: To Do (todo) -->
-          <div class="kanban-column" data-status="todo" id="col-todo">
-            <div class="kanban-column-header">
-              <span class="kanban-column-title">
-                <span class="kanban-dot dot-todo">●</span> To Do
-              </span>
-              <div class="kanban-header-actions">
-                <span class="kanban-task-count" id="count-todo">0</span>
-                <button class="btn-col-add-task member-only-control" data-status="todo" title="Add task to To Do">+</button>
-              </div>
-            </div>
-            <div class="kanban-tasks-list" id="tasks-list-todo" data-status="todo">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-          <!-- Column: In Progress (in_progress) -->
-          <div class="kanban-column" data-status="in_progress" id="col-in_progress">
-            <div class="kanban-column-header">
-              <span class="kanban-column-title">
-                <span class="kanban-dot dot-in_progress">●</span> In Progress
-              </span>
-              <div class="kanban-header-actions">
-                <span class="kanban-task-count" id="count-in_progress">0</span>
-                <button class="btn-col-add-task member-only-control" data-status="in_progress" title="Add task to In Progress">+</button>
-              </div>
-            </div>
-            <div class="kanban-tasks-list" id="tasks-list-in_progress" data-status="in_progress">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-          <!-- Column: Review (review) -->
-          <div class="kanban-column" data-status="review" id="col-review">
-            <div class="kanban-column-header">
-              <span class="kanban-column-title">
-                <span class="kanban-dot dot-review">●</span> Review
-              </span>
-              <div class="kanban-header-actions">
-                <span class="kanban-task-count" id="count-review">0</span>
-                <button class="btn-col-add-task member-only-control" data-status="review" title="Add task to Review">+</button>
-              </div>
-            </div>
-            <div class="kanban-tasks-list" id="tasks-list-review" data-status="review">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-          <!-- Column: Done (done) -->
-          <div class="kanban-column" data-status="done" id="col-done">
-            <div class="kanban-column-header">
-              <span class="kanban-column-title">
-                <span class="kanban-dot dot-done">●</span> Done
-              </span>
-              <div class="kanban-header-actions">
-                <span class="kanban-task-count" id="count-done">0</span>
-                <button class="btn-col-add-task member-only-control" data-status="done" title="Add task to Done">+</button>
-              </div>
-            </div>
-            <div class="kanban-tasks-list" id="tasks-list-done" data-status="done">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Project Showcase & Documentation Box (Toggleable with Task Board) -->
+        <!-- Project Showcase & Documentation Box -->
         <div id="projectShowcaseBox" class="project-showcase-box hidden">
           <!-- Showcase Header -->
           <div class="project-showcase-header">
@@ -523,6 +468,84 @@
             </h4>
             <div id="showcaseMarkdownBody" class="showcase-markdown-body markdown-body">
               <!-- Rendered dynamically via DOMPurify.sanitize(marked.parse(...)) -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Board Locked Note (Shown in Submitted Phase) -->
+        <div id="boardLockedNote" class="board-locked-note hidden">
+          <div class="board-locked-inner">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Board Locked (Submitted) — Sprint archive is in read-only mode for judges and teammates.</span>
+          </div>
+        </div>
+
+        <!-- 4-Column GitHub Projects Style Kanban Board -->
+        <div class="kanban-board" id="kanbanBoard">
+          <!-- Column: To Do (todo) -->
+          <div class="kanban-column" data-status="todo" id="col-todo">
+            <div class="kanban-column-header">
+              <span class="kanban-column-title">
+                <span class="kanban-dot dot-todo">●</span> To Do
+              </span>
+              <div class="kanban-header-actions">
+                <span class="kanban-task-count" id="count-todo">0</span>
+                <button class="btn-col-add-task member-only-control" data-status="todo" title="Add task to To Do">+</button>
+              </div>
+            </div>
+            <div class="kanban-tasks-list" id="tasks-list-todo" data-status="todo">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Column: In Progress (in_progress) -->
+          <div class="kanban-column" data-status="in_progress" id="col-in_progress">
+            <div class="kanban-column-header">
+              <span class="kanban-column-title">
+                <span class="kanban-dot dot-in_progress">●</span> In Progress
+              </span>
+              <div class="kanban-header-actions">
+                <span class="kanban-task-count" id="count-in_progress">0</span>
+                <button class="btn-col-add-task member-only-control" data-status="in_progress" title="Add task to In Progress">+</button>
+              </div>
+            </div>
+            <div class="kanban-tasks-list" id="tasks-list-in_progress" data-status="in_progress">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Column: Review (review) -->
+          <div class="kanban-column" data-status="review" id="col-review">
+            <div class="kanban-column-header">
+              <span class="kanban-column-title">
+                <span class="kanban-dot dot-review">●</span> Review
+              </span>
+              <div class="kanban-header-actions">
+                <span class="kanban-task-count" id="count-review">0</span>
+                <button class="btn-col-add-task member-only-control" data-status="review" title="Add task to Review">+</button>
+              </div>
+            </div>
+            <div class="kanban-tasks-list" id="tasks-list-review" data-status="review">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Column: Done (done) -->
+          <div class="kanban-column" data-status="done" id="col-done">
+            <div class="kanban-column-header">
+              <span class="kanban-column-title">
+                <span class="kanban-dot dot-done">●</span> Done
+              </span>
+              <div class="kanban-header-actions">
+                <span class="kanban-task-count" id="count-done">0</span>
+                <button class="btn-col-add-task member-only-control" data-status="done" title="Add task to Done">+</button>
+              </div>
+            </div>
+            <div class="kanban-tasks-list" id="tasks-list-done" data-status="done">
+              <!-- Rendered dynamically -->
             </div>
           </div>
         </div>

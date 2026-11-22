@@ -254,7 +254,7 @@
     if (p === 'register' || p === 'registration' || p === 'reg') return 'register';
     if (p === 'ideate' || p === 'brainstorm' || p === 'idea' || p === 'ideation') return 'ideate';
     if (p === 'build' || p === 'building' || p === 'dev' || p === 'development') return 'build';
-    if (p === 'judge' || p === 'judging' || p === 'review' || p === 'eval') return 'judge';
+    if (p === 'judge' || p === 'judging' || p === 'review' || p === 'eval' || p === 'submitted') return 'judge';
     return null;
   }
 
@@ -429,6 +429,7 @@
    * Render Individual Redesigned Hackathon Card
    */
   function renderHackathonCardHtml(h) {
+    const isSubmitted = (h.phase && String(h.phase).toLowerCase() === 'submitted');
     const isPublic = Boolean(h.is_public);
     const { text: countdownText, isEnded } = formatCountdown(h.deadline_at);
     const normalizedPhase = normalizePhase(h.phase || h.status);
@@ -438,7 +439,15 @@
     let phasePillHtml = '';
     let trackAriaLabel = 'Phase progress';
 
-    if (isEnded) {
+    if (isSubmitted) {
+      phasePillHtml = `
+        <span class="hk-pill hk-pill-phase is-submitted">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Submitted</span>
+        </span>
+      `;
+      trackAriaLabel = 'Phase progress: Project submitted for judging';
+    } else if (isEnded) {
       phasePillHtml = `
         <span class="hk-pill hk-pill-phase is-ended">
           ${PHASE_ICONS.ended}
@@ -482,7 +491,11 @@
       let fillColor = '#363636';
       let isCurrent = false;
 
-      if (isEnded) {
+      if (isSubmitted) {
+        // Submitted: all four segments completed in emerald green
+        fillWidth = 100;
+        fillColor = '#10b981';
+      } else if (isEnded) {
         // All four segments filled in #e6e6e6 with no amber
         fillWidth = 100;
         fillColor = '#e6e6e6';
@@ -523,7 +536,7 @@
       </div>
     `;
 
-    // 4. Time row: left = mono countdown, right = overlapping avatar stack (max 3, then +N)
+    // 4. Time row: left = mono countdown (or green Submitted badge if phase === 'submitted'), right = overlapping avatar stack (max 3, then +N)
     const members = Array.isArray(h.team_members) ? h.team_members : [];
     const maxShown = 3;
     const shownMembers = members.slice(0, maxShown);
@@ -554,8 +567,15 @@
     const timeRowHtml = `
       <div class="hk-time-row">
         <div class="hk-time-left">
-          <div class="hk-countdown-value" data-deadline="${escapeHtml(h.deadline_at || '')}">${countdownText}</div>
-          <div class="hk-countdown-sub">${isEnded ? 'deadline passed' : 'left to submit'}</div>
+          ${isSubmitted
+            ? `<div class="hk-submitted-badge">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                 <span>Submitted</span>
+               </div>
+               <div class="hk-countdown-sub">ready for judging</div>`
+            : `<div class="hk-countdown-value" data-deadline="${escapeHtml(h.deadline_at || '')}">${countdownText}</div>
+               <div class="hk-countdown-sub">${isEnded ? 'deadline passed' : 'left to submit'}</div>`
+          }
         </div>
         ${avatarStackHtml}
       </div>

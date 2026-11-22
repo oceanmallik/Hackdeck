@@ -420,6 +420,13 @@
   color: var(--hk-text);
 }
 
+.hk-pill-phase.is-submitted {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  font-weight: 600;
+}
+
 .hk-pill-visibility {
   color: var(--hk-text);
   margin-left: auto;
@@ -529,6 +536,22 @@
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+
+.hk-submitted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 700;
+  color: #10b981;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.hk-submitted-badge svg {
+  stroke: #10b981;
 }
 
 .hk-countdown-sub {

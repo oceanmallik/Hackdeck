@@ -838,7 +838,8 @@
    * Generate HTML for a single Kanban task card
    */
   function renderTaskCard(task) {
-    const isDraggable = isMember && !isSpectator;
+    const isSubmitted = (currentHackathon?.phase === 'submitted');
+    const isDraggable = isMember && !isSpectator && !isSubmitted;
     const assignee = task.assignee_id ? assigneeMap.get(task.assignee_id) : null;
     
     // Assignee markup
@@ -863,8 +864,8 @@
       `;
     }
 
-    // Action Buttons (Edit & Delete, visible when isMember is true)
-    const cardActionsMarkup = isMember && !isSpectator
+    // Action Buttons (Edit & Delete, visible when isMember is true and board is not submitted)
+    const cardActionsMarkup = (isMember && !isSpectator && !isSubmitted)
       ? `<div class="task-card-actions">
           <button type="button" class="btn-task-action btn-edit-task btn-trigger-edit-task" data-task-id="${escapeHtml(task.id)}" title="Edit task">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -906,13 +907,14 @@
   // =========================================================================
 
   function bindCardEvents() {
-    // 1. Native Card Drag Events & Double Click to Edit
-    if (isMember && !isSpectator) {
+    // 1. Native Card Drag Events & Double Click to Edit (disabled in submitted phase)
+    if (isMember && !isSpectator && currentHackathon?.phase !== 'submitted') {
       const cards = document.querySelectorAll('.kanban-task-card[draggable="true"]');
       cards.forEach(card => {
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragend', handleDragEnd);
         card.addEventListener('dblclick', () => {
+          if (currentHackathon?.phase === 'submitted') return;
           const taskId = card.getAttribute('data-task-id');
           if (taskId) openEditTaskModal(taskId);
         });
@@ -941,6 +943,10 @@
   }
 
   function handleDragStart(e) {
+    if (currentHackathon?.phase === 'submitted') {
+      e.preventDefault();
+      return;
+    }
     const card = e.currentTarget;
     const taskId = card.getAttribute('data-task-id');
     draggedTaskId = taskId;
@@ -968,7 +974,7 @@
       if (!dropzone) return;
 
       dropzone.addEventListener('dragover', (e) => {
-        if (!isMember || isSpectator) return;
+        if (!isMember || isSpectator || currentHackathon?.phase === 'submitted') return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         dropzone.classList.add('drag-over');
@@ -982,7 +988,7 @@
       });
 
       dropzone.addEventListener('drop', async (e) => {
-        if (!isMember || isSpectator) return;
+        if (!isMember || isSpectator || currentHackathon?.phase === 'submitted') return;
         e.preventDefault();
         dropzone.classList.remove('drag-over');
 
@@ -1309,6 +1315,75 @@
 
     // Setup Supabase Realtime for tasks
     setupTasksRealtime(hackathonId);
+
+    // Apply phase UI (Build vs Submitted)
+    applyBuildPhaseState(hackathon.phase);
+  }
+
+  /**
+   * Apply Build Phase State (Build vs Submitted)
+   * In Submitted phase:
+   * - Render Project Showcase & Documentation Box prominently at top
+   * - Render Kanban Board below it in Read-Only Archive Mode
+   * - Show Board Locked (Submitted) note
+   * - Hide + Add Task buttons and disable dragging
+   */
+  function applyBuildPhaseState(phase) {
+    if (currentHackathon) currentHackathon.phase = phase;
+    const isSubmitted = (phase && String(phase).toLowerCase() === 'submitted');
+    const phaseBuildContainerEl = document.getElementById('phaseBuildContainer');
+    const projectShowcaseBoxEl = document.getElementById('projectShowcaseBox');
+    const kanbanBoardEl = document.getElementById('kanbanBoard');
+    const lockedProjectDetailsBarEl = document.getElementById('lockedProjectDetailsBar');
+    const boardLockedNoteEl = document.getElementById('boardLockedNote');
+    const buildViewSwitcherEl = document.querySelector('.build-view-switcher');
+    const buildPhaseTitleEl = document.getElementById('buildPhaseTitle');
+    const buildPhaseSubtitleEl = document.getElementById('buildPhaseSubtitle');
+
+    if (isSubmitted) {
+      if (phaseBuildContainerEl) phaseBuildContainerEl.classList.add('phase-submitted-view');
+      // Prominently show Project Showcase Box at top
+      if (projectShowcaseBoxEl) projectShowcaseBoxEl.classList.remove('hidden');
+      // Show Board Locked Note
+      if (boardLockedNoteEl) boardLockedNoteEl.classList.remove('hidden');
+      // Show Kanban Board below it in read-only mode
+      if (kanbanBoardEl) kanbanBoardEl.classList.remove('hidden');
+      // Hide view switcher tabs and standalone locked idea bar
+      if (buildViewSwitcherEl) buildViewSwitcherEl.classList.add('hidden');
+      if (lockedProjectDetailsBarEl) lockedProjectDetailsBarEl.classList.add('hidden');
+      if (btnAddTask) btnAddTask.classList.add('hidden');
+
+      if (buildPhaseTitleEl) buildPhaseTitleEl.textContent = 'Project Showcase & Documentation';
+      if (buildPhaseSubtitleEl) buildPhaseSubtitleEl.textContent = 'Project submitted for judging. Sprint archive is preserved in read-only mode.';
+
+      // Re-render tasks so draggable and delete/edit buttons are disabled
+      renderKanbanColumns();
+    } else {
+      if (phaseBuildContainerEl) phaseBuildContainerEl.classList.remove('phase-submitted-view');
+      if (boardLockedNoteEl) boardLockedNoteEl.classList.add('hidden');
+      if (buildViewSwitcherEl) buildViewSwitcherEl.classList.remove('hidden');
+
+      // Restore view based on active tab
+      const tabViewShowcaseEl = document.getElementById('tabViewShowcase');
+      const isShowcaseActive = tabViewShowcaseEl && tabViewShowcaseEl.classList.contains('active');
+      if (isShowcaseActive) {
+        if (projectShowcaseBoxEl) projectShowcaseBoxEl.classList.remove('hidden');
+        if (kanbanBoardEl) kanbanBoardEl.classList.add('hidden');
+        if (lockedProjectDetailsBarEl) lockedProjectDetailsBarEl.classList.add('hidden');
+        if (btnAddTask) btnAddTask.classList.add('hidden');
+        if (buildPhaseTitleEl) buildPhaseTitleEl.textContent = 'Project Showcase & Documentation';
+        if (buildPhaseSubtitleEl) buildPhaseSubtitleEl.textContent = 'Live prototype links, video walkthroughs, and technical documentation.';
+      } else {
+        if (projectShowcaseBoxEl) projectShowcaseBoxEl.classList.add('hidden');
+        if (kanbanBoardEl) kanbanBoardEl.classList.remove('hidden');
+        if (lockedProjectDetailsBarEl) lockedProjectDetailsBarEl.classList.remove('hidden');
+        if (btnAddTask && isMember && !isSpectator) btnAddTask.classList.remove('hidden');
+        if (buildPhaseTitleEl) buildPhaseTitleEl.textContent = 'Build Sprint & Task Kanban';
+        if (buildPhaseSubtitleEl) buildPhaseSubtitleEl.textContent = 'Track deliverables, assign tasks, and assemble your final submission checklist.';
+      }
+
+      renderKanbanColumns();
+    }
   }
 
   function bindEvents() {
@@ -1383,6 +1458,7 @@
     const buildPhaseSubtitle = document.getElementById('buildPhaseSubtitle');
 
     function switchBuildView(view) {
+      if (currentHackathon?.phase === 'submitted') return;
       if (view === 'showcase') {
         if (tabViewTasks) {
           tabViewTasks.classList.remove('active');
@@ -1427,6 +1503,7 @@
     const colAddBtns = document.querySelectorAll('.btn-col-add-task');
     colAddBtns.forEach(btn => {
       btn.addEventListener('click', () => {
+        if (currentHackathon?.phase === 'submitted') return;
         const status = btn.getAttribute('data-status') || 'todo';
         openCreateTaskModal(status);
       });
@@ -1463,6 +1540,16 @@
     // Listen for board ready from board.js
     window.addEventListener('hackdeck:board-ready', (e) => {
       setupFromBoardContext(e.detail);
+    });
+
+    // Listen for phase transitions (e.g. brainstorm -> build -> submitted)
+    window.addEventListener('hackdeck:phase-changed', (e) => {
+      const newPhase = e.detail?.phase;
+      if (currentHackathon) {
+        currentHackathon.phase = newPhase;
+        if (e.detail?.hackathon) Object.assign(currentHackathon, e.detail.hackathon);
+      }
+      applyBuildPhaseState(newPhase);
     });
 
     // Listen for board updates (such as locked idea updates, showcase updates, or URL changes)

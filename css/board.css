@@ -126,6 +126,36 @@
   border-color: var(--border);
 }
 
+.badge-phase-submitted {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+  font-weight: 600;
+}
+
+/* Emerald Action Button */
+.btn-emerald {
+  background-color: #10b981;
+  color: #ffffff;
+  border: 1px solid #059669;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.25);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-emerald:hover {
+  background-color: #059669;
+  border-color: #047857;
+  color: #ffffff;
+}
+
+.btn-emerald:active {
+  transform: translateY(1px);
+}
+
 /* Spectator Mode Badge */
 .badge-spectator {
   display: inline-flex;
@@ -186,6 +216,55 @@
   background-color: var(--bg-card);
   color: var(--text-muted);
   border-color: var(--border);
+}
+
+.countdown-submitted {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+  font-weight: 600;
+}
+
+/* Board Locked Note (Submitted Phase) */
+.board-locked-note {
+  margin: var(--space-20) 0 var(--space-16);
+  padding: 12px 18px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid #10b981;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.board-locked-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-13);
+  font-weight: 500;
+}
+
+.board-locked-inner svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+/* Submitted View Restrictions */
+.phase-submitted-view .btn-col-add-task,
+.phase-submitted-view #btnAddTask,
+.phase-submitted-view .task-card-actions {
+  display: none !important;
+}
+
+.phase-submitted-view .kanban-task-card {
+  cursor: default !important;
+}
+
+.phase-submitted-view .project-showcase-box {
+  margin-bottom: var(--space-24);
 }
 
 /* Leader Controls in Header */

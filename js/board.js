@@ -21,6 +21,8 @@
   const boardPhaseBadge = document.getElementById('boardPhaseBadge');
   const phaseBadgeIcon = document.getElementById('phaseBadgeIcon');
   const phaseBadgeText = document.getElementById('phaseBadgeText');
+  const btnMarkSubmitted = document.getElementById('btnMarkSubmitted');
+  const btnReopenBuild = document.getElementById('btnReopenBuild');
   const spectatorBadge = document.getElementById('spectatorBadge');
   const spectatorBanner = document.getElementById('spectatorBanner');
 
@@ -80,7 +82,27 @@
    * Turns amber under 6 hours, red under 1 hour
    */
   function updateCountdownTimer() {
-    if (!currentHackathon || !currentHackathon.deadline_at) {
+    if (!currentHackathon) {
+      if (countdownTimerText) countdownTimerText.textContent = '--d --h --m --s';
+      return;
+    }
+
+    // Freeze timer into static status badge when project is submitted
+    if (currentHackathon.phase === 'submitted') {
+      const d = currentHackathon.submitted_at ? new Date(currentHackathon.submitted_at) : new Date();
+      const formattedTime = !isNaN(d.getTime()) 
+        ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+        : 'Submitted';
+
+      if (countdownTimerText) countdownTimerText.textContent = `Submitted • ${formattedTime}`;
+      if (deadlineCountdown) {
+        deadlineCountdown.className = 'countdown-badge countdown-submitted';
+        deadlineCountdown.title = `Project was submitted for judging on ${formattedTime}`;
+      }
+      return;
+    }
+
+    if (!currentHackathon.deadline_at) {
       if (countdownTimerText) countdownTimerText.textContent = '--d --h --m --s';
       return;
     }
@@ -126,17 +148,52 @@
   function startCountdownTicker() {
     if (countdownIntervalId) clearInterval(countdownIntervalId);
     updateCountdownTimer();
+    // Do not continuously tick if already submitted
+    if (currentHackathon?.phase === 'submitted') return;
     countdownIntervalId = setInterval(updateCountdownTimer, 1000);
   }
 
   /**
-   * Apply Phase UI (Brainstorm vs Build)
+   * Apply Phase UI (Brainstorm vs Build vs Submitted)
    */
   function applyPhaseUI(phase) {
-    const isBuildPhase = (phase && String(phase).toLowerCase() === 'build');
+    const p = (phase && String(phase).toLowerCase()) || 'brainstorm';
+    const isSubmittedPhase = (p === 'submitted');
+    const isBuildPhase = (p === 'build');
 
-    if (isBuildPhase) {
-      // Show Build Phase, hide Brainstorm
+    if (isSubmittedPhase) {
+      // 1. Submitted for Judging Phase UI
+      if (phaseBrainstormContainer) phaseBrainstormContainer.classList.add('hidden');
+      if (phaseBuildContainer) phaseBuildContainer.classList.remove('hidden');
+
+      // Update Phase Badge in Header (Clean emerald badge)
+      if (boardPhaseBadge) {
+        boardPhaseBadge.className = 'badge-phase badge-phase-submitted';
+      }
+      if (phaseBadgeIcon) phaseBadgeIcon.textContent = '🏆';
+      if (phaseBadgeText) phaseBadgeText.textContent = 'Submitted for Judging';
+
+      // Freeze Countdown Timer into static "Submitted" status badge
+      updateCountdownTimer();
+
+      // Header Leader Buttons
+      if (btnMarkSubmitted) btnMarkSubmitted.classList.add('hidden');
+      if (btnTogglePhase) btnTogglePhase.classList.add('hidden');
+      if (btnReopenBuild) {
+        if (isLeader) {
+          btnReopenBuild.classList.remove('hidden');
+        } else {
+          btnReopenBuild.classList.add('hidden');
+        }
+      }
+
+      // Notify submodules (build.js, chat.js, etc.)
+      window.dispatchEvent(new CustomEvent('hackdeck:phase-changed', {
+        detail: { phase: 'submitted', hackathon: currentHackathon }
+      }));
+
+    } else if (isBuildPhase) {
+      // 2. Build Sprint Phase UI
       if (phaseBrainstormContainer) phaseBrainstormContainer.classList.add('hidden');
       if (phaseBuildContainer) phaseBuildContainer.classList.remove('hidden');
 
@@ -147,9 +204,20 @@
       if (phaseBadgeIcon) phaseBadgeIcon.textContent = '🔨';
       if (phaseBadgeText) phaseBadgeText.textContent = 'Build Phase';
 
-      // Update Leader Phase Switch button
-      if (phaseActionText) {
-        phaseActionText.textContent = 'Switch to Brainstorm Phase ←';
+      // Live Countdown Timer
+      startCountdownTicker();
+
+      // Header Leader Buttons
+      if (btnReopenBuild) btnReopenBuild.classList.add('hidden');
+      if (isLeader) {
+        if (btnTogglePhase) {
+          btnTogglePhase.classList.remove('hidden');
+          if (phaseActionText) phaseActionText.textContent = 'Switch to Brainstorm Phase ←';
+        }
+        if (btnMarkSubmitted) btnMarkSubmitted.classList.remove('hidden');
+      } else {
+        if (btnTogglePhase) btnTogglePhase.classList.add('hidden');
+        if (btnMarkSubmitted) btnMarkSubmitted.classList.add('hidden');
       }
 
       // Populate Locked Idea Mission Banner if available
@@ -161,8 +229,14 @@
         if (lockedIdeaTitle) lockedIdeaTitle.textContent = currentHackathon.locked_idea_title;
         if (lockedIdeaSummary) lockedIdeaSummary.textContent = currentHackathon.locked_idea_summary || '';
       }
+
+      // Notify submodules
+      window.dispatchEvent(new CustomEvent('hackdeck:phase-changed', {
+        detail: { phase: 'build', hackathon: currentHackathon }
+      }));
+
     } else {
-      // Show Brainstorm Phase, hide Build
+      // 3. Brainstorm Phase UI
       if (phaseBuildContainer) phaseBuildContainer.classList.add('hidden');
       if (phaseBrainstormContainer) phaseBrainstormContainer.classList.remove('hidden');
 
@@ -173,9 +247,130 @@
       if (phaseBadgeIcon) phaseBadgeIcon.textContent = '💡';
       if (phaseBadgeText) phaseBadgeText.textContent = 'Brainstorm Phase';
 
-      // Update Leader Phase Switch button
-      if (phaseActionText) {
-        phaseActionText.textContent = 'Switch to Build Phase →';
+      // Live Countdown Timer
+      startCountdownTicker();
+
+      // Header Leader Buttons
+      if (btnMarkSubmitted) btnMarkSubmitted.classList.add('hidden');
+      if (btnReopenBuild) btnReopenBuild.classList.add('hidden');
+      if (isLeader) {
+        if (btnTogglePhase) {
+          btnTogglePhase.classList.remove('hidden');
+          if (phaseActionText) phaseActionText.textContent = 'Switch to Build Phase →';
+        }
+      } else {
+        if (btnTogglePhase) btnTogglePhase.classList.add('hidden');
+      }
+
+      // Notify submodules
+      window.dispatchEvent(new CustomEvent('hackdeck:phase-changed', {
+        detail: { phase: 'brainstorm', hackathon: currentHackathon }
+      }));
+    }
+  }
+
+  /**
+   * Leader "Mark as Submitted" Action
+   */
+  async function markProjectAsSubmitted() {
+    if (!isLeader || !currentHackathon) return;
+
+    const confirmed = window.confirm(
+      'Mark this project as finished and submit for judging?\n\n' +
+      '• Your Project Showcase & Documentation will be displayed prominently at the top for judges and visitors.\n' +
+      '• The Kanban Task Board will be locked in read-only archive mode.\n\n' +
+      'You can reopen the build phase at any time if last-minute adjustments are needed before the deadline.'
+    );
+
+    if (!confirmed) return;
+
+    if (btnMarkSubmitted) {
+      btnMarkSubmitted.disabled = true;
+      btnMarkSubmitted.innerHTML = '<span>Submitting...</span>';
+    }
+
+    const submittedAt = new Date().toISOString();
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('hackathons')
+        .update({
+          phase: 'submitted',
+          submitted_at: submittedAt
+        })
+        .eq('id', currentHackathon.id);
+
+      if (error) throw error;
+
+      currentHackathon.phase = 'submitted';
+      currentHackathon.submitted_at = submittedAt;
+
+      applyPhaseUI('submitted');
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('🏆 Project successfully marked as submitted for judging!', 'success');
+      }
+    } catch (err) {
+      console.error('Error submitting project:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to submit project', 'error');
+      }
+    } finally {
+      if (btnMarkSubmitted) {
+        btnMarkSubmitted.disabled = false;
+        btnMarkSubmitted.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Mark as Submitted</span>
+        `;
+      }
+    }
+  }
+
+  /**
+   * Leader "Reopen Build Phase" Action
+   */
+  async function reopenBuildPhase() {
+    if (!isLeader || !currentHackathon) return;
+
+    const confirmed = window.confirm(
+      'Reopen the Build Phase?\n\n' +
+      '• The Kanban sprint task board will be unlocked for teammates to make last-minute edits.\n' +
+      '• You can mark as submitted again once deliverables are finalized.'
+    );
+
+    if (!confirmed) return;
+
+    if (btnReopenBuild) {
+      btnReopenBuild.disabled = true;
+      btnReopenBuild.innerHTML = '<span>Reopening...</span>';
+    }
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('hackathons')
+        .update({ phase: 'build' })
+        .eq('id', currentHackathon.id);
+
+      if (error) throw error;
+
+      currentHackathon.phase = 'build';
+      applyPhaseUI('build');
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('Workspace reopened to BUILD phase!', 'success');
+      }
+    } catch (err) {
+      console.error('Error reopening build phase:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to reopen build phase', 'error');
+      }
+    } finally {
+      if (btnReopenBuild) {
+        btnReopenBuild.disabled = false;
+        btnReopenBuild.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+          <span>Reopen Build Phase</span>
+        `;
       }
     }
   }
@@ -322,14 +517,15 @@
           if (!updated) return;
 
           console.log('Realtime hackathon update received:', updated);
+          const previousPhase = currentHackathon.phase;
           Object.assign(currentHackathon, updated);
 
           // 1. Phase change transition
-          if (updated.phase && updated.phase !== currentHackathon.phase) {
-            currentHackathon.phase = updated.phase;
+          if (updated.phase && updated.phase !== previousPhase) {
             applyPhaseUI(updated.phase);
             if (typeof window.showToast === 'function') {
-              window.showToast(`🔔 Workspace transitioned to ${updated.phase.toUpperCase()} phase!`, 'info');
+              const label = updated.phase === 'submitted' ? 'SUBMITTED FOR JUDGING' : updated.phase.toUpperCase();
+              window.showToast(`🔔 Workspace transitioned to ${label} phase!`, 'info');
             }
           }
 
@@ -622,6 +818,12 @@
     }
     if (btnTogglePhase) {
       btnTogglePhase.addEventListener('click', toggleHackathonPhase);
+    }
+    if (btnMarkSubmitted) {
+      btnMarkSubmitted.addEventListener('click', markProjectAsSubmitted);
+    }
+    if (btnReopenBuild) {
+      btnReopenBuild.addEventListener('click', reopenBuildPhase);
     }
 
     // Team Chat Toggle
