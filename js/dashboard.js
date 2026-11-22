@@ -228,12 +228,64 @@
     }
   }
 
+  // Ordered phases and display configurations
+  const ORDERED_PHASES = ['register', 'ideate', 'build', 'judge'];
+  const PHASE_LABELS = {
+    register: 'Register',
+    ideate: 'Ideate',
+    build: 'Build',
+    judge: 'Judge'
+  };
+
+  const PHASE_ICONS = {
+    register: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>`,
+    ideate: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path></svg>`,
+    build: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>`,
+    judge: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></svg>`,
+    ended: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+  };
+
+  /**
+   * Map database phase or status to allowed values: register, ideate, build, judge
+   */
+  function normalizePhase(phase) {
+    if (!phase) return null;
+    const p = String(phase).trim().toLowerCase();
+    if (p === 'register' || p === 'registration' || p === 'reg') return 'register';
+    if (p === 'ideate' || p === 'brainstorm' || p === 'idea' || p === 'ideation') return 'ideate';
+    if (p === 'build' || p === 'building' || p === 'dev' || p === 'development') return 'build';
+    if (p === 'judge' || p === 'judging' || p === 'review' || p === 'eval') return 'judge';
+    return null;
+  }
+
+  /**
+   * Calculate elapsed percentage for current phase if timestamps exist (min 4%, max 100%)
+   */
+  function getPhaseProgress(h, phase) {
+    const startVal = h.phase_start_at || h[`${phase}_start_at`] || h[`${phase}_start`] || h.phase_started_at;
+    const endVal = h.phase_end_at || h[`${phase}_end_at`] || h[`${phase}_end`] || h.phase_ends_at;
+
+    if (startVal && endVal) {
+      const start = new Date(startVal).getTime();
+      const end = new Date(endVal).getTime();
+      const now = Date.now();
+      if (!isNaN(start) && !isNaN(end) && end > start) {
+        const pct = ((now - start) / (end - start)) * 100;
+        return Math.min(100, Math.max(4, Math.round(pct)));
+      }
+    }
+    return 100;
+  }
+
   /**
    * Format countdown string
+   * Large mono font: "53d 16h". Under 1 day: "5h 20m".
    */
   function formatCountdown(deadlineStr) {
-    if (!deadlineStr) return { text: 'No deadline set', isEnded: false };
+    if (!deadlineStr) return { text: 'No deadline', isEnded: false };
     const deadlineTime = new Date(deadlineStr).getTime();
+    if (isNaN(deadlineTime)) return { text: 'No deadline', isEnded: false };
+
     const now = Date.now();
     const diff = deadlineTime - now;
 
@@ -244,50 +296,345 @@
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    let text = '';
-    if (days > 0) {
-      text = `${days}d ${hours}h left`;
-    } else if (hours > 0) {
-      text = `${hours}h ${minutes}m left`;
-    } else {
-      text = `${minutes}m ${seconds}s left`;
+    if (days >= 1) {
+      return { text: `${days}d ${hours}h`, isEnded: false };
     }
-
-    return { text, isEnded: false };
+    return { text: `${hours}h ${minutes}m`, isEnded: false };
   }
 
   /**
-   * Ticker to update countdown previews every second
+   * Apply Ended UI modifications directly if countdown expires live
+   */
+  function applyEndedVisualsToCard(card) {
+    if (!card) return;
+    const topRow = card.querySelector('.hk-card-top-row');
+    if (topRow && !topRow.querySelector('.hk-pill-phase.is-ended')) {
+      const existingPhasePill = topRow.querySelector('.hk-pill-phase');
+      if (existingPhasePill) existingPhasePill.remove();
+      const endedPill = document.createElement('span');
+      endedPill.className = 'hk-pill hk-pill-phase is-ended';
+      endedPill.innerHTML = `${PHASE_ICONS.ended}<span>Ended</span>`;
+      topRow.prepend(endedPill);
+    }
+
+    const track = card.querySelector('.hk-phase-track');
+    if (track) {
+      track.setAttribute('aria-label', 'Phase progress: Hackathon ended');
+      const fills = track.querySelectorAll('.hk-phase-bar-fill');
+      fills.forEach(fill => {
+        fill.style.setProperty('--hk-target-width', '100%');
+        fill.style.setProperty('--hk-fill-color', '#e6e6e6');
+        fill.style.width = '100%';
+        fill.style.backgroundColor = '#e6e6e6';
+      });
+      const labels = track.querySelectorAll('.hk-phase-label');
+      labels.forEach(l => l.classList.remove('is-current'));
+    }
+
+    const sub = card.querySelector('.hk-countdown-sub');
+    if (sub) sub.textContent = 'deadline passed';
+  }
+
+  /**
+   * Ticker to update countdown previews every minute
+   * Cleans up cleanly on unmount / window unload.
    */
   function startCountdownTicker() {
-    if (countdownTimerId) clearInterval(countdownTimerId);
+    if (countdownTimerId) {
+      clearInterval(countdownTimerId);
+      countdownTimerId = null;
+    }
 
     const updateAll = () => {
-      const countdownElements = document.querySelectorAll('.hackathon-countdown[data-deadline]');
+      const countdownElements = document.querySelectorAll('.hk-countdown-value[data-deadline]');
       countdownElements.forEach(el => {
         const deadline = el.getAttribute('data-deadline');
         const { text, isEnded } = formatCountdown(deadline);
+        el.textContent = text;
         
         if (isEnded) {
-          el.className = 'hackathon-countdown countdown-ended';
-          el.innerHTML = `
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-            <span>Deadline Passed</span>
-          `;
-        } else {
-          el.className = 'hackathon-countdown countdown-active';
-          el.innerHTML = `
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-            <span>${text}</span>
-          `;
+          const card = el.closest('.hk-card-component');
+          if (card) applyEndedVisualsToCard(card);
         }
       });
     };
 
     updateAll();
-    countdownTimerId = setInterval(updateAll, 1000);
+    // Update on an interval (every minute)
+    countdownTimerId = setInterval(updateAll, 60000);
+  }
+
+  // Cleanup interval on page unload / unmount
+  window.addEventListener('beforeunload', () => {
+    if (countdownTimerId) {
+      clearInterval(countdownTimerId);
+      countdownTimerId = null;
+    }
+  });
+
+  /**
+   * Render loading skeleton blocks with identical layout (no layout shift)
+   */
+  function renderLoadingSkeletons() {
+    if (!myHackathonsGrid) return;
+    const skeletonCard = `
+      <div class="hk-card-component hk-card-skeleton" aria-hidden="true">
+        <div class="hk-card-top-row">
+          <div class="hk-skeleton-block" style="width: 90px; height: 24px; border-radius: 9999px;"></div>
+          <div class="hk-skeleton-block" style="width: 65px; height: 24px; border-radius: 9999px;"></div>
+        </div>
+        <div class="hk-skeleton-block" style="width: 72%; height: 26px; border-radius: 6px;"></div>
+        <div class="hk-phase-track">
+          <div class="hk-phase-segment">
+            <div class="hk-skeleton-block" style="height: 5px; border-radius: 9999px;"></div>
+            <div class="hk-skeleton-block" style="height: 11px; width: 42px; margin: 4px auto 0; border-radius: 4px;"></div>
+          </div>
+          <div class="hk-phase-segment">
+            <div class="hk-skeleton-block" style="height: 5px; border-radius: 9999px;"></div>
+            <div class="hk-skeleton-block" style="height: 11px; width: 42px; margin: 4px auto 0; border-radius: 4px;"></div>
+          </div>
+          <div class="hk-phase-segment">
+            <div class="hk-skeleton-block" style="height: 5px; border-radius: 9999px;"></div>
+            <div class="hk-skeleton-block" style="height: 11px; width: 42px; margin: 4px auto 0; border-radius: 4px;"></div>
+          </div>
+          <div class="hk-phase-segment">
+            <div class="hk-skeleton-block" style="height: 5px; border-radius: 9999px;"></div>
+            <div class="hk-skeleton-block" style="height: 11px; width: 42px; margin: 4px auto 0; border-radius: 4px;"></div>
+          </div>
+        </div>
+        <div class="hk-time-row">
+          <div>
+            <div class="hk-skeleton-block" style="width: 130px; height: 34px; border-radius: 6px;"></div>
+            <div class="hk-skeleton-block" style="width: 78px; height: 12px; margin-top: 6px; border-radius: 4px;"></div>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div class="hk-skeleton-block" style="width: 28px; height: 28px; border-radius: 50%;"></div>
+            <div class="hk-skeleton-block" style="width: 28px; height: 28px; border-radius: 50%; margin-left: -8px;"></div>
+            <div class="hk-skeleton-block" style="width: 28px; height: 28px; border-radius: 50%; margin-left: -8px;"></div>
+          </div>
+        </div>
+        <div class="hk-info-block">
+          <div class="hk-skeleton-block" style="width: 100px; height: 14px; border-radius: 4px;"></div>
+          <div class="hk-skeleton-block" style="width: 130px; height: 14px; border-radius: 4px;"></div>
+        </div>
+        <div class="hk-skeleton-block" style="width: 100%; height: 40px; border-radius: 10px;"></div>
+      </div>
+    `;
+
+    myHackathonsGrid.innerHTML = skeletonCard.repeat(3);
+  }
+
+  /**
+   * Render Individual Redesigned Hackathon Card
+   */
+  function renderHackathonCardHtml(h) {
+    const isPublic = Boolean(h.is_public);
+    const { text: countdownText, isEnded } = formatCountdown(h.deadline_at);
+    const normalizedPhase = normalizePhase(h.phase || h.status);
+    const currentPhaseIndex = normalizedPhase ? ORDERED_PHASES.indexOf(normalizedPhase) : -1;
+
+    // 1. Top row pills
+    let phasePillHtml = '';
+    let trackAriaLabel = 'Phase progress';
+
+    if (isEnded) {
+      phasePillHtml = `
+        <span class="hk-pill hk-pill-phase is-ended">
+          ${PHASE_ICONS.ended}
+          <span>Ended</span>
+        </span>
+      `;
+      trackAriaLabel = 'Phase progress: Hackathon ended';
+    } else if (normalizedPhase && currentPhaseIndex !== -1) {
+      const displayName = PHASE_LABELS[normalizedPhase];
+      phasePillHtml = `
+        <span class="hk-pill hk-pill-phase">
+          ${PHASE_ICONS[normalizedPhase]}
+          <span>${displayName} phase</span>
+        </span>
+      `;
+      trackAriaLabel = `Phase progress: ${displayName} phase in progress`;
+    } else {
+      // Phase missing or unknown: phase pill is hidden
+      phasePillHtml = '';
+      trackAriaLabel = 'Phase progress: Phase not set';
+    }
+
+    const visibilityPillHtml = `
+      <span class="hk-pill hk-pill-visibility">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        <span>${isPublic ? 'Public' : 'Private'}</span>
+      </span>
+    `;
+
+    // 2. Title
+    const titleHtml = `<h3 class="hk-card-title" title="${escapeHtml(h.title)}">${escapeHtml(h.title)}</h3>`;
+
+    // 3. Phase track: 4 equal segments in a grid
+    const segmentsHtml = ORDERED_PHASES.map((phaseKey, index) => {
+      const label = PHASE_LABELS[phaseKey];
+      let fillWidth = 0;
+      let fillColor = '#363636';
+      let isCurrent = false;
+
+      if (isEnded) {
+        // All four segments filled in #e6e6e6 with no amber
+        fillWidth = 100;
+        fillColor = '#e6e6e6';
+      } else if (currentPhaseIndex !== -1) {
+        if (index < currentPhaseIndex) {
+          // Phases before the current one: fully filled, color #e6e6e6
+          fillWidth = 100;
+          fillColor = '#e6e6e6';
+        } else if (index === currentPhaseIndex) {
+          // Current phase: amber #f5a524 and label in primary text color, weight 500
+          fillWidth = getPhaseProgress(h, phaseKey);
+          fillColor = '#f5a524';
+          isCurrent = true;
+        } else {
+          // Phases after the current one: empty bar (#363636), muted label
+          fillWidth = 0;
+          fillColor = '#363636';
+        }
+      } else {
+        // Phase missing or unknown: no segment is highlighted
+        fillWidth = 0;
+        fillColor = '#363636';
+      }
+
+      return `
+        <div class="hk-phase-segment">
+          <div class="hk-phase-bar">
+            <div class="hk-phase-bar-fill" style="--hk-target-width: ${fillWidth}%; --hk-fill-color: ${fillColor};"></div>
+          </div>
+          <div class="hk-phase-label ${isCurrent ? 'is-current' : ''}">${label}</div>
+        </div>
+      `;
+    }).join('');
+
+    const trackHtml = `
+      <div class="hk-phase-track" role="img" aria-label="${escapeHtml(trackAriaLabel)}">
+        ${segmentsHtml}
+      </div>
+    `;
+
+    // 4. Time row: left = mono countdown, right = overlapping avatar stack (max 3, then +N)
+    const members = Array.isArray(h.team_members) ? h.team_members : [];
+    const maxShown = 3;
+    const shownMembers = members.slice(0, maxShown);
+    const remainingCount = members.length - maxShown;
+
+    let avatarStackHtml = '';
+    if (members.length > 0) {
+      const circles = shownMembers.map(m => {
+        const name = m.display_name || m.username || 'Member';
+        const initial = (name[0] || 'U').toUpperCase();
+        if (m.avatar_url) {
+          return `
+            <div class="hk-avatar-circle" title="${escapeHtml(name)}">
+              <img src="${escapeHtml(m.avatar_url)}" alt="${escapeHtml(name)}" onerror="this.style.display='none';this.parentElement.textContent='${initial}';" />
+            </div>
+          `;
+        }
+        return `<div class="hk-avatar-circle" title="${escapeHtml(name)}">${initial}</div>`;
+      }).join('');
+
+      const more = remainingCount > 0 ? `
+        <div class="hk-avatar-circle hk-avatar-more" title="${remainingCount} more team member${remainingCount > 1 ? 's' : ''}">+${remainingCount}</div>
+      ` : '';
+
+      avatarStackHtml = `<div class="hk-team-avatars" aria-label="Team members">${circles}${more}</div>`;
+    }
+
+    const timeRowHtml = `
+      <div class="hk-time-row">
+        <div class="hk-time-left">
+          <div class="hk-countdown-value" data-deadline="${escapeHtml(h.deadline_at || '')}">${countdownText}</div>
+          <div class="hk-countdown-sub">${isEnded ? 'deadline passed' : 'left to submit'}</div>
+        </div>
+        ${avatarStackHtml}
+      </div>
+    `;
+
+    // 5. Info block: Devpost link (truncated) + formatted deadline in user locale
+    const rawUrl = h.event_url || h.devpost_url || '';
+    let devpostLinkHtml = '';
+    if (rawUrl) {
+      const cleanUrl = escapeHtml(rawUrl);
+      let displayLink = 'Devpost';
+      try {
+        const parsed = new URL(rawUrl);
+        displayLink = parsed.hostname.replace(/^www\./, '');
+        if (parsed.pathname && parsed.pathname !== '/') {
+          displayLink += parsed.pathname;
+        }
+      } catch (_) {
+        displayLink = rawUrl;
+      }
+
+      devpostLinkHtml = `
+        <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="hk-devpost-link" title="${cleanUrl}">
+          <span>${escapeHtml(displayLink)}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      `;
+    }
+
+    let deadlineFormattedHtml = '';
+    if (h.deadline_at) {
+      const deadlineDate = new Date(h.deadline_at);
+      if (!isNaN(deadlineDate.getTime())) {
+        const datePart = deadlineDate.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric'
+        });
+        const timePart = deadlineDate.toLocaleTimeString(undefined, {
+          hour: 'numeric',
+          minute: '2-digit'
+        });
+        deadlineFormattedHtml = `<div class="hk-deadline-label">Deadline <b>${datePart}, ${timePart}</b></div>`;
+      }
+    }
+
+    const infoBlockHtml = `
+      <div class="hk-info-block">
+        ${devpostLinkHtml}
+        ${deadlineFormattedHtml}
+      </div>
+    `;
+
+    // 6. Action button: Full-width white button with right arrow nudging on hover
+    const buttonHtml = `
+      <a href="board.html?id=${encodeURIComponent(h.id)}" class="hk-open-btn">
+        <span>Open workspace</span>
+        <svg class="hk-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </a>
+    `;
+
+    return `
+      <div class="hk-card-component white-hackathon-card" data-hackathon-id="${escapeHtml(h.id)}">
+        <div class="hk-card-top-row">
+          ${phasePillHtml}
+          ${visibilityPillHtml}
+        </div>
+        ${titleHtml}
+        ${trackHtml}
+        ${timeRowHtml}
+        ${infoBlockHtml}
+        ${buttonHtml}
+      </div>
+    `;
   }
 
   /**
@@ -316,89 +663,11 @@
           </button>
         </div>
       `;
-      // Re-bind any new buttons
       bindCreateModalTriggers();
       return;
     }
 
-    const cardsHtml = hackathons.map(h => {
-      const isBuild = (h.phase && String(h.phase).toLowerCase() === 'build');
-      const phaseBadgeClass = isBuild ? 'phase-badge-build' : 'phase-badge-brainstorm';
-      const phaseText = isBuild ? 'Build Phase' : 'Brainstorm Phase';
-      const phaseIcon = isBuild ? '🔨' : '💡';
-
-      const isPublic = Boolean(h.is_public);
-      const privacyClass = isPublic ? 'pill-public' : 'pill-private';
-      const privacyText = isPublic ? 'Public' : 'Private';
-      const privacyIcon = isPublic ? '🌐' : '🔒';
-
-      const { text: countdownText, isEnded } = formatCountdown(h.deadline_at);
-      const countdownClass = isEnded ? 'countdown-ended' : 'countdown-active';
-
-      // Format human-friendly deadline date
-      let formattedDate = '';
-      if (h.deadline_at) {
-        const d = new Date(h.deadline_at);
-        formattedDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-      }
-
-      // Event URL link
-      let eventUrlMarkup = '';
-      if (h.event_url) {
-        const cleanUrl = escapeHtml(h.event_url);
-        let domain = 'Event Page';
-        try {
-          const parsed = new URL(h.event_url);
-          domain = parsed.hostname.replace('www.', '');
-        } catch (_) {}
-
-        eventUrlMarkup = `
-          <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="hackathon-card-extlink" title="Open ${domain}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
-            <span>${escapeHtml(domain)}</span>
-          </a>
-        `;
-      }
-
-      return `
-        <div class="white-hackathon-card" data-hackathon-id="${escapeHtml(h.id)}">
-          <!-- Card Header Badges -->
-          <div class="hackathon-card-header">
-            <span class="phase-badge ${phaseBadgeClass}">
-              <span>${phaseIcon}</span>
-              <span>${phaseText}</span>
-            </span>
-            <span class="privacy-pill ${privacyClass}">
-              <span>${privacyIcon}</span>
-              <span>${privacyText}</span>
-            </span>
-          </div>
-
-          <!-- Title & Countdown -->
-          <div class="hackathon-card-body">
-            <h4 class="hackathon-card-title">${escapeHtml(h.title)}</h4>
-            
-            <div class="hackathon-card-meta">
-              <div class="hackathon-countdown ${countdownClass}" data-deadline="${escapeHtml(h.deadline_at)}">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                <span>${countdownText}</span>
-              </div>
-              ${eventUrlMarkup}
-            </div>
-
-            ${formattedDate ? `<div class="hackathon-deadline-hint">Deadline: ${formattedDate}</div>` : ''}
-          </div>
-
-          <!-- Card Footer Action -->
-          <div class="hackathon-card-footer">
-            <a href="board.html?id=${encodeURIComponent(h.id)}" class="btn btn-primary btn-sm btn-open-workspace">
-              <span>Open Workspace</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </a>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const cardsHtml = hackathons.map(renderHackathonCardHtml).join('');
 
     // Append the "+ New Hackathon" shortcut card at the end
     const createShortcutHtml = `
@@ -416,7 +685,7 @@
 
     myHackathonsGrid.innerHTML = cardsHtml + createShortcutHtml;
 
-    // Start live timer ticker
+    // Start live countdown ticker
     startCountdownTicker();
 
     // Re-bind triggers on dynamically created shortcut cards
@@ -464,14 +733,8 @@
   async function loadMyHackathons() {
     if (!window.supabaseClient) return;
 
-    if (myHackathonsGrid) {
-      myHackathonsGrid.innerHTML = `
-        <div class="loading-hackathons-state">
-          <div class="loading-spinner"></div>
-          <span>Loading your hackathons...</span>
-        </div>
-      `;
-    }
+    // Render loading skeleton blocks with identical layout (no layout shift)
+    renderLoadingSkeletons();
 
     try {
       // 1. Resolve current user identity
@@ -581,6 +844,74 @@
         const timeB = new Date(b.created_at || b.deadline_at || 0).getTime();
         return timeB - timeA;
       });
+
+      // 6. Enrich hackathons with team members
+      const hackathonIds = cachedHackathons.map(h => h.id).filter(Boolean);
+      if (hackathonIds.length > 0) {
+        try {
+          const { data: memberRows, error: mErr } = await window.supabaseClient
+            .from('hackathon_members')
+            .select(`
+              hackathon_id,
+              user_id,
+              role,
+              profiles (
+                id,
+                username,
+                display_name,
+                avatar_url
+              )
+            `)
+            .in('hackathon_id', hackathonIds);
+
+          if (!mErr && memberRows) {
+            const memberMap = {};
+            memberRows.forEach(m => {
+              if (!memberMap[m.hackathon_id]) memberMap[m.hackathon_id] = [];
+              const profile = m.profiles || {
+                id: m.user_id,
+                username: 'member',
+                display_name: 'Member',
+                avatar_url: null
+              };
+              memberMap[m.hackathon_id].push(profile);
+            });
+            cachedHackathons.forEach(h => {
+              h.team_members = memberMap[h.id] || [];
+            });
+          } else {
+            // Fallback 2-step lookup if relation name differs
+            const { data: rawMembers } = await window.supabaseClient
+              .from('hackathon_members')
+              .select('*')
+              .in('hackathon_id', hackathonIds);
+
+            if (rawMembers && rawMembers.length > 0) {
+              const uids = [...new Set(rawMembers.map(m => m.user_id).filter(Boolean))];
+              const { data: profiles } = await window.supabaseClient
+                .from('profiles')
+                .select('id, username, display_name, avatar_url')
+                .in('id', uids);
+              const pMap = new Map((profiles || []).map(p => [p.id, p]));
+              const memberMap = {};
+              rawMembers.forEach(m => {
+                if (!memberMap[m.hackathon_id]) memberMap[m.hackathon_id] = [];
+                memberMap[m.hackathon_id].push(pMap.get(m.user_id) || {
+                  id: m.user_id,
+                  username: 'member',
+                  display_name: 'Member',
+                  avatar_url: null
+                });
+              });
+              cachedHackathons.forEach(h => {
+                h.team_members = memberMap[h.id] || [];
+              });
+            }
+          }
+        } catch (memErr) {
+          console.warn('Could not load team members for cards:', memErr);
+        }
+      }
 
       // Update Active Boards stat
       if (statActiveBoards) {
