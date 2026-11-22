@@ -1295,6 +1295,15 @@
     // Load initial tasks
     loadTasks();
 
+    // Configure Add Task button visibility
+    if (btnAddTask) {
+      if (isMember && !isSpectator) {
+        btnAddTask.classList.remove('hidden');
+      } else {
+        btnAddTask.classList.add('hidden');
+      }
+    }
+
     // Setup drag-and-drop dropzones
     setupKanbanDropzones();
 

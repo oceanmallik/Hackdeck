@@ -16,6 +16,7 @@
   let membersRealtimeChannel = null;
   let pollsRealtimeChannel = null;
   let votesRealtimeChannel = null;
+  let invitesRealtimeChannel = null;
 
   // DOM Elements - Roster
   const teamRosterSidebar = document.getElementById('teamRosterSidebar');
@@ -25,6 +26,12 @@
   const inputSearchMember = document.getElementById('inputSearchMember');
   const memberSearchResults = document.getElementById('memberSearchResults');
   const memberSearchSpinner = document.getElementById('memberSearchSpinner');
+
+  // DOM Elements - Pending Invites
+  const pendingInvitesSection = document.getElementById('pendingInvitesSection');
+  const pendingInvitesList = document.getElementById('pendingInvitesList');
+  const pendingInvitesCount = document.getElementById('pendingInvitesCount');
+  let currentPendingInvites = [];
 
   // DOM Elements - Idea Polls
   const ideaPollsGrid = document.getElementById('ideaPollsGrid');
@@ -240,8 +247,11 @@
 
       if (error) throw error;
 
-      // Filter out users who are already in currentMembers
+      // Filter out users who are already in currentMembers or have pending invite
       const existingUserIds = new Set(currentMembers.map(m => m.user_id));
+      (currentPendingInvites || []).forEach(inv => {
+        if (inv.invitee_id) existingUserIds.add(inv.invitee_id);
+      });
       const candidates = (profiles || []).filter(p => !existingUserIds.has(p.id));
 
       if (candidates.length === 0) {
@@ -266,8 +276,8 @@
                   <div class="search-item-handle">@${escapeHtml(p.username)}</div>
                 </div>
               </div>
-              <button type="button" class="btn btn-outline btn-xs btn-add-candidate" data-user-id="${escapeHtml(p.id)}">
-                <span>+ Add</span>
+              <button type="button" class="btn btn-primary btn-xs btn-invite-candidate" data-user-id="${escapeHtml(p.id)}" data-username="${escapeHtml(p.username)}">
+                <span>Invite</span>
               </button>
             </div>
           `;
@@ -284,34 +294,84 @@
   }
 
   /**
-   * Add selected user to hackathon_members with role = 'member'
+   * Send Invitation to User:
+   * Verifies target user is not already in hackathon_members and does not have a pending invite,
+   * then inserts { hackathon_id, inviter_id: currentUser.id, invitee_id: targetProfile.id, status: 'pending' } into public.hackathon_invitations.
    */
-  async function addMemberToTeam(userId, username) {
+  async function sendTeamInvitation(userId, username) {
     if (!window.supabaseClient || !isLeader || !hackathonId) return;
 
+    let authUser = currentUser || window.currentUser;
+    if (!authUser) {
+      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      authUser = session?.user;
+    }
+
+    if (!authUser) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('You must be signed in to send invitations.', 'error');
+      }
+      return;
+    }
+
     try {
-      const newMemberRow = {
+      // 1. Verify target user is not already in hackathon_members
+      const { data: existingMember, error: memberErr } = await window.supabaseClient
+        .from('hackathon_members')
+        .select('id')
+        .eq('hackathon_id', hackathonId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (memberErr) {
+        console.warn('Notice checking existing membership:', memberErr);
+      }
+
+      if (existingMember) {
+        if (typeof window.showToast === 'function') {
+          window.showToast(`@${username} is already on the team.`, 'info');
+        }
+        return;
+      }
+
+      // 2. Verify target user does not already have a 'pending' row in hackathon_invitations
+      const { data: existingInvite, error: inviteErr } = await window.supabaseClient
+        .from('hackathon_invitations')
+        .select('id')
+        .eq('hackathon_id', hackathonId)
+        .eq('invitee_id', userId)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (inviteErr) {
+        console.warn('Notice checking existing invitation:', inviteErr);
+      }
+
+      if (existingInvite) {
+        if (typeof window.showToast === 'function') {
+          window.showToast(`An invitation is already pending for @${username}.`, 'info');
+        }
+        return;
+      }
+
+      // 3. Insert into public.hackathon_invitations
+      const newInvite = {
         hackathon_id: hackathonId,
-        user_id: userId,
-        role: 'member'
+        inviter_id: authUser.id,
+        invitee_id: userId,
+        status: 'pending'
       };
 
-      const { error } = await window.supabaseClient
-        .from('hackathon_members')
-        .insert([newMemberRow]);
+      const { error: insertError } = await window.supabaseClient
+        .from('hackathon_invitations')
+        .insert([newInvite]);
 
-      if (error) {
-        if (error.code === '23505') {
-          if (typeof window.showToast === 'function') {
-            window.showToast(`@${username} is already on the team.`, 'info');
-          }
-        } else {
-          throw error;
-        }
-      } else {
-        if (typeof window.showToast === 'function') {
-          window.showToast(`Added @${username} to the team!`, 'success');
-        }
+      if (insertError) {
+        throw insertError;
+      }
+
+      if (typeof window.showToast === 'function') {
+        window.showToast(`Invitation sent to @${username}!`, 'success');
       }
 
       // Reset search box & dropdown
@@ -321,15 +381,146 @@
         memberSearchResults.innerHTML = '';
       }
 
-      // Refresh roster
-      await loadTeamRoster();
+      // Refresh pending invites
+      await loadPendingInvites();
 
     } catch (err) {
-      console.error('Error adding member to team:', err);
+      console.error('Error sending invitation:', err);
       if (typeof window.showToast === 'function') {
-        window.showToast(err.message || 'Failed to add member', 'error');
+        window.showToast(err.message || 'Failed to send invitation', 'error');
       }
     }
+  }
+
+  /**
+   * Load pending invitations for current hackathon
+   */
+  async function loadPendingInvites() {
+    if (!window.supabaseClient || !hackathonId) return;
+
+    try {
+      let invites = [];
+
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('hackathon_invitations')
+          .select(`
+            id,
+            hackathon_id,
+            inviter_id,
+            invitee_id,
+            status,
+            created_at,
+            invitee:profiles!invitee_id (
+              id,
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
+          .eq('hackathon_id', hackathonId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          invites = data;
+        } else {
+          throw error;
+        }
+      } catch (joinErr) {
+        // Fallback: 2-step lookup in case relation name differs in PostgREST
+        const { data: rawInvites, error: rawErr } = await window.supabaseClient
+          .from('hackathon_invitations')
+          .select('*')
+          .eq('hackathon_id', hackathonId)
+          .eq('status', 'pending');
+
+        if (rawErr) throw rawErr;
+
+        if (rawInvites && rawInvites.length > 0) {
+          const inviteeIds = rawInvites.map(i => i.invitee_id).filter(Boolean);
+          const { data: profiles } = await window.supabaseClient
+            .from('profiles')
+            .select('id, username, display_name, avatar_url')
+            .in('id', inviteeIds);
+
+          const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+          invites = rawInvites.map(i => ({
+            ...i,
+            invitee: profileMap.get(i.invitee_id) || null
+          }));
+        } else {
+          invites = [];
+        }
+      }
+
+      currentPendingInvites = invites;
+      renderPendingInvites(currentPendingInvites);
+
+    } catch (err) {
+      console.warn('Notice loading pending invites:', err);
+    }
+  }
+
+  /**
+   * Render Pending Invitations List
+   */
+  function renderPendingInvites(invites) {
+    if (!pendingInvitesSection || !pendingInvitesList) return;
+
+    if (pendingInvitesCount) {
+      pendingInvitesCount.textContent = invites.length;
+    }
+
+    if (invites.length === 0) {
+      pendingInvitesSection.classList.add('hidden');
+      pendingInvitesList.innerHTML = '';
+      return;
+    }
+
+    pendingInvitesSection.classList.remove('hidden');
+
+    const isCurrentLeader = Boolean(isLeader);
+
+    pendingInvitesList.innerHTML = invites.map(inv => {
+      const p = inv.invitee || {};
+      const username = p.username || 'user';
+      const displayName = p.display_name || username;
+      const avatarUrl = p.avatar_url || '';
+      const initial = (displayName || username).charAt(0).toUpperCase();
+
+      const avatarMarkup = avatarUrl
+        ? `<img class="team-member-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'13\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
+        : `<div class="team-member-avatar">${escapeHtml(initial)}</div>`;
+
+      const cancelBtnMarkup = isCurrentLeader
+        ? `
+          <button type="button" class="btn-cancel-invite" data-invite-id="${escapeHtml(inv.id)}" data-username="${escapeHtml(username)}" title="Cancel invitation to @${escapeHtml(username)}" aria-label="Cancel invitation">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <span>Cancel</span>
+          </button>
+        `
+        : '';
+
+      return `
+        <div class="pending-invite-item">
+          <div class="team-member-profile">
+            ${avatarMarkup}
+            <div class="team-member-text">
+              <span class="team-member-name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
+              <span class="team-member-handle">@${escapeHtml(username)}</span>
+            </div>
+          </div>
+          <div class="pending-invite-actions">
+            <span class="role-badge role-badge-pending">
+              <span class="role-dot role-dot-pending" aria-hidden="true"></span>
+              <span>Pending</span>
+            </span>
+            ${cancelBtnMarkup}
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   // =========================================================================
@@ -792,6 +983,28 @@
         }
       )
       .subscribe();
+
+    // 4. Subscribe to hackathon_invitations changes for this board
+    if (invitesRealtimeChannel) window.supabaseClient.removeChannel(invitesRealtimeChannel);
+    invitesRealtimeChannel = window.supabaseClient
+      .channel(`invites-realtime-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'hackathon_invitations',
+          filter: `hackathon_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('Realtime hackathon_invitations update:', payload);
+          loadPendingInvites();
+          if (payload.new && payload.new.status === 'accepted') {
+            loadTeamRoster();
+          }
+        }
+      )
+      .subscribe();
   }
 
   // =========================================================================
@@ -817,8 +1030,18 @@
       }
     }
 
+    // Configure Pitch Idea button visibility
+    if (btnPitchIdea) {
+      if (isMember && !isSpectator) {
+        btnPitchIdea.classList.remove('hidden');
+      } else {
+        btnPitchIdea.classList.add('hidden');
+      }
+    }
+
     // Load initial data
     loadTeamRoster();
+    loadPendingInvites();
     loadIdeaPolls();
 
     // Setup Realtime subscriptions
@@ -864,15 +1087,50 @@
       });
     }
 
-    // Delegate "+ Add" candidate buttons in search dropdown
+    // Delegate "Invite" candidate buttons in search dropdown
     if (memberSearchResults) {
       memberSearchResults.addEventListener('click', (e) => {
-        const btnAdd = e.target.closest('.btn-add-candidate');
-        if (btnAdd) {
-          const userId = btnAdd.getAttribute('data-user-id');
-          const item = btnAdd.closest('.member-search-item');
-          const username = item ? item.getAttribute('data-username') : 'user';
-          addMemberToTeam(userId, username);
+        const btnInvite = e.target.closest('.btn-invite-candidate, .btn-add-candidate');
+        if (btnInvite) {
+          const userId = btnInvite.getAttribute('data-user-id');
+          const item = btnInvite.closest('.member-search-item');
+          const username = btnInvite.getAttribute('data-username') || (item ? item.getAttribute('data-username') : 'user');
+          sendTeamInvitation(userId, username);
+        }
+      });
+    }
+
+    // Delegate "Cancel" buttons in pending invites list
+    if (pendingInvitesList) {
+      pendingInvitesList.addEventListener('click', async (e) => {
+        const btnCancel = e.target.closest('.btn-cancel-invite');
+        if (btnCancel) {
+          const inviteId = btnCancel.getAttribute('data-invite-id');
+          const username = btnCancel.getAttribute('data-username') || 'user';
+          if (!inviteId) return;
+
+          btnCancel.disabled = true;
+
+          try {
+            const { error } = await window.supabaseClient
+              .from('hackathon_invitations')
+              .delete()
+              .eq('id', inviteId);
+
+            if (error) throw error;
+
+            if (typeof window.showToast === 'function') {
+              window.showToast(`Cancelled invitation for @${username}.`, 'info');
+            }
+
+            await loadPendingInvites();
+          } catch (err) {
+            console.error('Error cancelling invitation:', err);
+            if (typeof window.showToast === 'function') {
+              window.showToast(err.message || 'Could not cancel invitation.', 'error');
+            }
+            btnCancel.disabled = false;
+          }
         }
       });
     }

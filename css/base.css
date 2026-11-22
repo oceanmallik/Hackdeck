@@ -31,6 +31,14 @@
   --warning-bg: rgba(245, 158, 11, 0.08);
   --warning-border: rgba(245, 158, 11, 0.22);
 
+  /* Invitation Notification & Action Colors */
+  --invite-banner-bg: #141b27;
+  --invite-banner-border: rgba(59, 130, 246, 0.28);
+  --btn-blue-bg: #2563eb;
+  --btn-blue-hover: #1d4ed8;
+  --blue-accent-text: #93c5fd;
+  --blue-icon-text: #60a5fa;
+
   /* Compatibility Fallbacks */
   --border-color: var(--border);
   --bg-card-hover: var(--bg-elevated);
@@ -970,6 +978,114 @@ table tr {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   Persistent Top Invitation Notification Bar
+   ========================================================================== */
+#invitationBanner {
+  background-color: var(--invite-banner-bg);
+  border-bottom: 1px solid var(--invite-banner-border);
+  position: relative;
+  z-index: 1000;
+  width: 100%;
+}
+
+.invitation-banner-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  padding: 10px clamp(16px, 3.5vw, 64px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+  font-size: var(--font-size-14);
+  color: var(--text-body);
+}
+
+.invitation-banner-row:last-child {
+  border-bottom: none;
+}
+
+.invitation-banner-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  min-width: 0;
+}
+
+.invitation-banner-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background-color: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-icon-text);
+  flex-shrink: 0;
+}
+
+.invitation-banner-text {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.inviter-tag {
+  color: var(--blue-accent-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-12);
+  font-weight: 600;
+}
+
+.hackathon-tag {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.invitation-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-shrink: 0;
+}
+
+.btn-invitation-accept {
+  background-color: var(--btn-blue-bg);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.btn-invitation-accept:hover {
+  background-color: var(--btn-blue-hover);
+}
+
+.btn-invitation-reject {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-invitation-reject:hover {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
 }
 
 /* ==========================================================================

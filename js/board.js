@@ -415,31 +415,18 @@
   }
 
   /**
-   * Main Initialization & Access Verification
+   * Verify Membership Using user.id and Apply UI Permissions
+   * Explicitly checks public.hackathon_members to set isMember and isLeader,
+   * unlocks member UI, hides spectator banner, and broadcasts board readiness.
    */
-  async function initializeBoard() {
-    if (!window.supabaseClient) {
-      console.error('Supabase client not initialized.');
-      showNotFoundScreen();
-      return;
-    }
+  async function verifyMembershipAndApplyUI(user) {
+    if (!currentHackathon || !window.supabaseClient) return;
 
-    // 1. Read hackathon ID from window.location.search
-    const urlParams = new URLSearchParams(window.location.search);
-    const hackathonId = urlParams.get('id');
+    currentUser = user || null;
 
-    if (!hackathonId || !hackathonId.trim()) {
-      showNotFoundScreen();
-      return;
-    }
-
-    try {
-      // 2. Fetch current logged-in user
-      const { data: { session } } = await window.supabaseClient.auth.getSession();
-      currentUser = session?.user || null;
-
-      if (currentUser) {
-        // Fetch profile for header badge
+    if (currentUser) {
+      // Fetch profile for header badge if not already fetched
+      if (!currentProfile || currentProfile.id !== currentUser.id) {
         let { data: profile } = await window.supabaseClient
           .from('profiles')
           .select('*')
@@ -460,11 +447,132 @@
               .catch(err => console.warn('Avatar sync notice:', err));
           }
         }
-
         currentProfile = profile;
-        renderUserNav(profile);
       }
+      renderUserNav(currentProfile);
+    } else {
+      currentProfile = null;
+      renderUserNav(null);
+    }
 
+    // Direct Membership Query against public.hackathon_members using user.id
+    let memberData = null;
+    if (currentUser) {
+      const { data, error: memberError } = await window.supabaseClient
+        .from('hackathon_members')
+        .select('*')
+        .eq('hackathon_id', currentHackathon.id)
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+      if (memberError) {
+        console.warn('Direct membership query notice:', memberError);
+      }
+      memberData = data;
+    }
+
+    // Set isMember and isLeader:
+    // isMember = Boolean(memberData) (or leader), and isLeader = (hackathon.leader_id === user.id || memberData?.role === 'leader')
+    isLeader = Boolean(currentUser && (currentHackathon.leader_id === currentUser.id || memberData?.role === 'leader'));
+    isMember = Boolean(memberData) || isLeader;
+
+    // Access Control Decisions:
+    // If private board and user is not a member -> Not Found / Access Denied
+    if (!currentHackathon.is_public && !isMember) {
+      showNotFoundScreen();
+      return;
+    }
+
+    // If public board and not a member -> Read-Only Public Spectator Mode
+    isSpectator = Boolean(currentHackathon.is_public && !isMember);
+
+    // Hide loading / access denied screens, reveal board workspace
+    if (boardLoadingState) boardLoadingState.classList.add('hidden');
+    if (accessDeniedScreen) accessDeniedScreen.classList.add('hidden');
+    if (boardMainContent) boardMainContent.classList.remove('hidden');
+
+    // Render Header Info
+    if (boardTitle) boardTitle.textContent = currentHackathon.title;
+    document.title = `${currentHackathon.title} — Hackdeck`;
+
+    updateEventUrlBadge(currentHackathon.event_url);
+
+    // Leader Controls
+    if (isLeader) {
+      if (leaderControlsContainer) leaderControlsContainer.classList.remove('hidden');
+      updatePrivacyUI(currentHackathon.is_public);
+    } else {
+      if (leaderControlsContainer) leaderControlsContainer.classList.add('hidden');
+    }
+
+    // Spectator Mode UI Restrictions & Member Mode Unlocking
+    if (isSpectator) {
+      document.body.classList.add('spectator-mode');
+      if (boardMainContent) boardMainContent.classList.add('spectator-mode');
+      if (spectatorBadge) spectatorBadge.classList.remove('hidden');
+      if (spectatorBanner) spectatorBanner.classList.remove('hidden');
+      if (teamChatPanel) teamChatPanel.classList.add('hidden');
+    } else {
+      // isMember is true: hide spectator banner (and Join Hackdeck button), hide spectator badge, unlock UI, show private team chat
+      document.body.classList.remove('spectator-mode');
+      if (boardMainContent) boardMainContent.classList.remove('spectator-mode');
+      if (spectatorBadge) spectatorBadge.classList.add('hidden');
+      if (spectatorBanner) spectatorBanner.classList.add('hidden');
+      if (teamChatPanel) teamChatPanel.classList.remove('hidden');
+    }
+
+    // Phase Routing: Initial UI State (Brainstorm vs Build)
+    applyPhaseUI(currentHackathon.phase || 'brainstorm');
+
+    // Expose global board context for brainstorm.js, build.js, chat.js
+    window.HackdeckBoard = {
+      getHackathon: () => currentHackathon,
+      getUser: () => currentUser,
+      getProfile: () => currentProfile,
+      isLeader: () => isLeader,
+      isMember: () => isMember,
+      isSpectator: () => isSpectator,
+      refreshMembership: () => verifyMembershipAndApplyUI(currentUser)
+    };
+
+    // Dispatch board-ready event so dependent modules (brainstorm, build, chat) update instantly
+    window.dispatchEvent(new CustomEvent('hackdeck:board-ready', {
+      detail: {
+        hackathon: currentHackathon,
+        user: currentUser,
+        profile: currentProfile,
+        isLeader,
+        isMember,
+        isSpectator
+      }
+    }));
+  }
+
+  /**
+   * Main Initialization & Access Verification
+   */
+  async function initializeBoard() {
+    if (!window.supabaseClient) {
+      console.error('Supabase client not initialized.');
+      showNotFoundScreen();
+      return;
+    }
+
+    // 1. Await Auth Session directly inside initializeBoard
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    const user = session?.user || null;
+    currentUser = user;
+
+    // 2. Read hackathon ID from window.location.search
+    const urlParams = new URLSearchParams(window.location.search);
+    const hackathonId = urlParams.get('id');
+
+    if (!hackathonId || !hackathonId.trim()) {
+      showNotFoundScreen();
+      return;
+    }
+
+    try {
       // 3. Query public.hackathons for board details
       const { data: hackathon, error: hackathonError } = await window.supabaseClient
         .from('hackathons')
@@ -486,104 +594,14 @@
 
       currentHackathon = hackathon;
 
-      // 4. Determine isLeader
-      isLeader = Boolean(currentUser && hackathon.leader_id === currentUser.id);
+      // 4. Verify membership using user.id and apply UI permissions
+      await verifyMembershipAndApplyUI(user);
 
-      // 5. Determine isMember
-      if (isLeader) {
-        // Leader is automatically a member (via trigger or role)
-        isMember = true;
-      } else if (currentUser) {
-        // Query public.hackathon_members
-        const { data: membership, error: memberError } = await window.supabaseClient
-          .from('hackathon_members')
-          .select('id')
-          .eq('hackathon_id', hackathon.id)
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-        if (memberError) {
-          console.warn('Membership query notice:', memberError);
-        }
-        isMember = Boolean(membership);
-      } else {
-        isMember = false;
-      }
-
-      // 6. Access Control Decisions:
-      // If private board and user is not a member -> Not Found / Access Denied
-      if (!hackathon.is_public && !isMember) {
-        showNotFoundScreen();
-        return;
-      }
-
-      // If public board and not a member -> Read-Only Public Spectator Mode
-      isSpectator = Boolean(hackathon.is_public && !isMember);
-
-      // Hide loading screen, reveal board workspace
-      if (boardLoadingState) boardLoadingState.classList.add('hidden');
-      if (accessDeniedScreen) accessDeniedScreen.classList.add('hidden');
-      if (boardMainContent) boardMainContent.classList.remove('hidden');
-
-      // 7. Render Header Info
-      if (boardTitle) boardTitle.textContent = hackathon.title;
-      document.title = `${hackathon.title} — Hackdeck`;
-
-      // Event URL Badge
-      updateEventUrlBadge(hackathon.event_url);
-
-      // Countdown Timer
+      // 5. Start Countdown Timer Ticker
       startCountdownTicker();
 
-      // Leader Controls
-      if (isLeader) {
-        if (leaderControlsContainer) leaderControlsContainer.classList.remove('hidden');
-        updatePrivacyUI(hackathon.is_public);
-      } else {
-        if (leaderControlsContainer) leaderControlsContainer.classList.add('hidden');
-      }
-
-      // Spectator Mode UI Restrictions
-      if (isSpectator) {
-        document.body.classList.add('spectator-mode');
-        if (boardMainContent) boardMainContent.classList.add('spectator-mode');
-        if (spectatorBadge) spectatorBadge.classList.remove('hidden');
-        if (spectatorBanner) spectatorBanner.classList.remove('hidden');
-        if (teamChatPanel) teamChatPanel.classList.add('hidden');
-      } else {
-        document.body.classList.remove('spectator-mode');
-        if (boardMainContent) boardMainContent.classList.remove('spectator-mode');
-        if (spectatorBadge) spectatorBadge.classList.add('hidden');
-        if (spectatorBanner) spectatorBanner.classList.add('hidden');
-        if (teamChatPanel) teamChatPanel.classList.remove('hidden');
-      }
-
-      // 8. Phase Routing: Initial UI State (Brainstorm vs Build)
-      applyPhaseUI(hackathon.phase || 'brainstorm');
-
-      // 9. Subscribe to Supabase Realtime for instant Phase 2 transition
+      // 6. Subscribe to Supabase Realtime for instant Phase 2 transition
       setupRealtimeSubscription(hackathon.id);
-
-      // 10. Expose global board context for brainstorm.js and other workspace modules
-      window.HackdeckBoard = {
-        getHackathon: () => currentHackathon,
-        getUser: () => currentUser,
-        getProfile: () => currentProfile,
-        isLeader: () => isLeader,
-        isMember: () => isMember,
-        isSpectator: () => isSpectator
-      };
-
-      window.dispatchEvent(new CustomEvent('hackdeck:board-ready', {
-        detail: {
-          hackathon: currentHackathon,
-          user: currentUser,
-          profile: currentProfile,
-          isLeader,
-          isMember,
-          isSpectator
-        }
-      }));
 
     } catch (err) {
       console.error('Unexpected error loading board:', err);
@@ -639,6 +657,25 @@
             }
           }
         }
+      }
+    });
+
+    // Re-sync on Auth Changes: listen to supabaseClient.auth.onAuthStateChange
+    if (window.supabaseClient) {
+      window.supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        console.log('board.js auth.onAuthStateChange:', _event, session?.user?.id);
+        const user = session?.user || null;
+        if (currentHackathon) {
+          await verifyMembershipAndApplyUI(user);
+        }
+      });
+    }
+
+    // Also listen for Hackdeck custom auth-change event
+    window.addEventListener('hackdeck:auth-change', async (e) => {
+      const user = e.detail?.user || null;
+      if (currentHackathon) {
+        await verifyMembershipAndApplyUI(user);
       }
     });
   }

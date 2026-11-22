@@ -21,6 +21,9 @@
 </head>
 <body>
 
+  <!-- Persistent Top Invitation Notification Bar -->
+  <div id="invitationBanner" class="hidden"></div>
+
   <!-- Persistent Top Header -->
   <header class="board-header">
     <div class="board-header-inner">
@@ -234,6 +237,17 @@
             <!-- Team Members List -->
             <div id="teamMembersList" class="team-members-list">
               <!-- Rendered dynamically by js/brainstorm.js -->
+            </div>
+
+            <!-- Pending Invitations Section (Visible if pending invites exist) -->
+            <div id="pendingInvitesSection" class="pending-invites-section hidden">
+              <div class="pending-invites-header">
+                <span class="pending-invites-title">Pending Invites</span>
+                <span id="pendingInvitesCount" class="roster-count-badge">0</span>
+              </div>
+              <div id="pendingInvitesList" class="pending-invites-list">
+                <!-- Rendered dynamically by js/brainstorm.js -->
+              </div>
             </div>
           </aside>
         </div>
@@ -814,6 +828,7 @@
   <!-- Application Scripts -->
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/invitations.js"></script>
   <script src="js/board.js"></script>
   <script src="js/brainstorm.js"></script>
   <script src="js/build.js"></script>

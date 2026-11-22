@@ -246,8 +246,16 @@
 }
 
 /* ==========================================================================
-   Public Spectator Banner
+   Public Spectator Banner & Mode
    ========================================================================== */
+body.spectator-mode .member-only-control {
+  display: none !important;
+}
+
+body.spectator-mode .kanban-card {
+  cursor: default !important;
+}
+
 .spectator-banner {
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border);
@@ -954,6 +962,12 @@
   color: var(--text-secondary);
 }
 
+.role-badge-pending {
+  background-color: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: var(--warning);
+}
+
 .role-dot {
   width: 5px;
   height: 5px;
@@ -962,6 +976,10 @@
 }
 
 .role-dot-leader {
+  background-color: var(--warning);
+}
+
+.role-dot-pending {
   background-color: var(--warning);
 }
 
@@ -983,6 +1001,79 @@
 .btn-remove-member:hover {
   background-color: var(--bg-card);
   border-color: var(--border);
+  color: var(--danger);
+}
+
+/* Pending Invitations Section */
+.pending-invites-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--border);
+}
+
+.pending-invites-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pending-invites-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pending-invites-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.pending-invite-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: 8px 12px;
+  background-color: var(--bg-elevated);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.pending-invite-item:hover {
+  border-color: var(--border-hover);
+}
+
+.pending-invite-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-cancel-invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-cancel-invite:hover {
+  background-color: var(--bg-card);
+  border-color: var(--border-hover);
   color: var(--danger);
 }
 
