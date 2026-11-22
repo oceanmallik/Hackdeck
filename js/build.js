@@ -65,6 +65,41 @@
   const createTaskErrorBanner = document.getElementById('createTaskErrorBanner');
   const createTaskErrorMessage = document.getElementById('createTaskErrorMessage');
 
+  // DOM Elements - Project Showcase Box
+  const projectShowcaseBox = document.getElementById('projectShowcaseBox');
+  const showcaseProjectTitle = document.getElementById('showcaseProjectTitle');
+  const btnEditProjectShowcase = document.getElementById('btnEditProjectShowcase');
+  const showcaseRepoLink = document.getElementById('showcaseRepoLink');
+  const showcaseRepoText = document.getElementById('showcaseRepoText');
+  const showcaseDemoLink = document.getElementById('showcaseDemoLink');
+  const showcaseDemoText = document.getElementById('showcaseDemoText');
+  const showcaseVideosSection = document.getElementById('showcaseVideosSection');
+  const showcaseVideosGrid = document.getElementById('showcaseVideosGrid');
+  const showcaseResourcesSection = document.getElementById('showcaseResourcesSection');
+  const showcaseResourcesList = document.getElementById('showcaseResourcesList');
+  const showcaseMarkdownBody = document.getElementById('showcaseMarkdownBody');
+
+  // DOM Elements - Edit Project Details Modal
+  const editProjectShowcaseModal = document.getElementById('editProjectShowcaseModal');
+  const btnCloseEditShowcaseModal = document.getElementById('btnCloseEditShowcaseModal');
+  const btnCancelEditShowcase = document.getElementById('btnCancelEditShowcase');
+  const editShowcaseForm = document.getElementById('editShowcaseForm');
+  const btnSaveShowcaseDetails = document.getElementById('btnSaveShowcaseDetails');
+  const inputShowcaseRepoUrl = document.getElementById('inputShowcaseRepoUrl');
+  const inputShowcaseDemoUrl = document.getElementById('inputShowcaseDemoUrl');
+  const inputShowcaseDescMd = document.getElementById('inputShowcaseDescMd');
+  const tabWriteMd = document.getElementById('tabWriteMd');
+  const tabPreviewMd = document.getElementById('tabPreviewMd');
+  const tabWriteContainer = document.getElementById('tabWriteContainer');
+  const tabPreviewContainer = document.getElementById('tabPreviewContainer');
+  const previewMarkdownOutput = document.getElementById('previewMarkdownOutput');
+  const btnAddYouTubeRow = document.getElementById('btnAddYouTubeRow');
+  const editYouTubeRowsContainer = document.getElementById('editYouTubeRowsContainer');
+  const btnAddResourceRow = document.getElementById('btnAddResourceRow');
+  const editResourceRowsContainer = document.getElementById('editResourceRowsContainer');
+  const editShowcaseErrorBanner = document.getElementById('editShowcaseErrorBanner');
+  const editShowcaseErrorMessage = document.getElementById('editShowcaseErrorMessage');
+
   /**
    * Safe HTML Escaper
    */
@@ -214,6 +249,415 @@
       if (btnSaveProjectUrls) {
         btnSaveProjectUrls.disabled = false;
         btnSaveProjectUrls.textContent = 'Save Links';
+      }
+    }
+  }
+
+  // =========================================================================
+  // 2. Project Showcase & Documentation Box
+  // =========================================================================
+
+  /**
+   * Extract 11-character video ID from various YouTube URL formats
+   */
+  function extractYouTubeId(url) {
+    if (!url || typeof url !== 'string') return null;
+    const match = url.trim().match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Safe JSON parse helper for array columns
+   */
+  function safeJsonArray(val) {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Render Markdown safely using marked & DOMPurify
+   */
+  function renderMarkdownSafe(mdText) {
+    if (!mdText || !mdText.trim()) return '';
+    try {
+      let rawHtml = '';
+      if (window.marked && typeof window.marked.parse === 'function') {
+        rawHtml = window.marked.parse(mdText);
+      } else {
+        rawHtml = escapeHtml(mdText).replace(/\n/g, '<br>');
+      }
+      if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+        return window.DOMPurify.sanitize(rawHtml);
+      }
+      return rawHtml;
+    } catch (e) {
+      console.warn('Error parsing markdown:', e);
+      return escapeHtml(mdText);
+    }
+  }
+
+  /**
+   * Render Project Showcase, Quick Links, YouTube Videos, Resources & Markdown Documentation
+   */
+  function renderProjectShowcase(hackathon) {
+    if (!hackathon) return;
+
+    // Leader editing button
+    if (btnEditProjectShowcase) {
+      if (isLeader) {
+        btnEditProjectShowcase.classList.remove('hidden');
+      } else {
+        btnEditProjectShowcase.classList.add('hidden');
+      }
+    }
+
+    // Title
+    if (showcaseProjectTitle) {
+      showcaseProjectTitle.textContent = hackathon.locked_idea_title || hackathon.title || 'Deliverables & Technical Overview';
+    }
+
+    // 1. Quick Links (GitHub & Live Demo)
+    if (showcaseRepoLink && showcaseRepoText) {
+      if (hackathon.repo_url && hackathon.repo_url.trim()) {
+        const cleanRepo = hackathon.repo_url.trim();
+        showcaseRepoLink.href = cleanRepo;
+        showcaseRepoLink.classList.remove('disabled');
+        showcaseRepoText.textContent = cleanRepo;
+      } else {
+        showcaseRepoLink.removeAttribute('href');
+        showcaseRepoLink.classList.add('disabled');
+        showcaseRepoText.textContent = 'Not linked yet';
+      }
+    }
+
+    if (showcaseDemoLink && showcaseDemoText) {
+      if (hackathon.demo_url && hackathon.demo_url.trim()) {
+        const cleanDemo = hackathon.demo_url.trim();
+        showcaseDemoLink.href = cleanDemo;
+        showcaseDemoLink.classList.remove('disabled');
+        showcaseDemoText.textContent = cleanDemo;
+      } else {
+        showcaseDemoLink.removeAttribute('href');
+        showcaseDemoLink.classList.add('disabled');
+        showcaseDemoText.textContent = 'Not deployed yet';
+      }
+    }
+
+    // 2. YouTube Video(s)
+    if (showcaseVideosGrid) {
+      const videos = safeJsonArray(hackathon.youtube_urls);
+      if (videos.length === 0) {
+        showcaseVideosGrid.innerHTML = `
+          <div class="showcase-empty-card" style="grid-column: 1 / -1;">
+            No demo videos linked yet. ${isLeader ? 'Click "Edit Project Details" above to embed a YouTube walkthrough.' : ''}
+          </div>
+        `;
+      } else {
+        const videoCards = videos.map((item, index) => {
+          const url = typeof item === 'string' ? item : (item.url || '');
+          const title = typeof item === 'object' && item.title ? item.title : `Demo Video #${index + 1}`;
+          const videoId = extractYouTubeId(url);
+
+          if (videoId) {
+            return `
+              <div class="showcase-video-card">
+                <div class="video-responsive-wrap">
+                  <iframe 
+                    src="https://www.youtube-nocookie.com/embed/${videoId}" 
+                    title="${escapeHtml(title)}" 
+                    loading="lazy" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen
+                  ></iframe>
+                </div>
+                <div class="showcase-video-meta">
+                  <span class="showcase-video-title" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+                  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="showcase-video-link">
+                    Watch on YouTube ↗
+                  </a>
+                </div>
+              </div>
+            `;
+          } else if (url) {
+            return `
+              <div class="showcase-video-card">
+                <div style="padding: 24px 16px; text-align: center; background-color: var(--bg-card);">
+                  <div style="font-size: 1.5rem; margin-bottom: 6px;">🎬</div>
+                  <div class="showcase-video-title">${escapeHtml(title)}</div>
+                  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="showcase-video-link" style="margin-top: 6px; display: inline-block;">
+                    Open Video Link ↗
+                  </a>
+                </div>
+              </div>
+            `;
+          }
+          return '';
+        }).filter(Boolean);
+
+        showcaseVideosGrid.innerHTML = videoCards.length > 0 
+          ? videoCards.join('') 
+          : `<div class="showcase-empty-card" style="grid-column: 1 / -1;">No valid demo videos provided.</div>`;
+      }
+    }
+
+    // 3. Resource Link(s)
+    if (showcaseResourcesList) {
+      const resources = safeJsonArray(hackathon.resource_links);
+      if (resources.length === 0) {
+        showcaseResourcesList.innerHTML = `
+          <div class="showcase-empty-card" style="width: 100%;">
+            No additional deliverables or links added. ${isLeader ? 'Click "Edit Project Details" to link Figma, slides, or documentation.' : ''}
+          </div>
+        `;
+      } else {
+        showcaseResourcesList.innerHTML = resources.map(res => {
+          const url = typeof res === 'string' ? res : (res.url || '#');
+          const label = typeof res === 'object' && res.label ? res.label : (url.replace(/^https?:\/\//, '') || 'Resource Link');
+          return `
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="showcase-resource-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+              <span>${escapeHtml(label)}</span>
+              <span style="font-size: 0.78rem; opacity: 0.65;">↗</span>
+            </a>
+          `;
+        }).join('');
+      }
+    }
+
+    // 4. Project Description (Markdown)
+    if (showcaseMarkdownBody) {
+      const mdContent = hackathon.project_description_md;
+      if (mdContent && mdContent.trim()) {
+        showcaseMarkdownBody.innerHTML = renderMarkdownSafe(mdContent);
+      } else {
+        showcaseMarkdownBody.innerHTML = `
+          <div class="showcase-empty-card">
+            No documentation written yet. ${isLeader ? 'Click "Edit Project Details" above to add your architecture notes, setup instructions, and project summary.' : ''}
+          </div>
+        `;
+      }
+    }
+  }
+
+  /**
+   * Open Edit Showcase Details Modal
+   */
+  function openEditShowcaseModal() {
+    if (!isLeader || !editProjectShowcaseModal) return;
+
+    if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
+
+    if (inputShowcaseRepoUrl) inputShowcaseRepoUrl.value = currentHackathon?.repo_url || '';
+    if (inputShowcaseDemoUrl) inputShowcaseDemoUrl.value = currentHackathon?.demo_url || '';
+    if (inputShowcaseDescMd) inputShowcaseDescMd.value = currentHackathon?.project_description_md || '';
+
+    // Switch to Write tab
+    switchMarkdownTab('write');
+
+    // Populate dynamic YouTube rows
+    if (editYouTubeRowsContainer) {
+      editYouTubeRowsContainer.innerHTML = '';
+      const videos = safeJsonArray(currentHackathon?.youtube_urls);
+      if (videos.length === 0) {
+        addYouTubeRow('', '');
+      } else {
+        videos.forEach(v => {
+          const url = typeof v === 'string' ? v : (v.url || '');
+          const title = typeof v === 'object' ? (v.title || '') : '';
+          addYouTubeRow(url, title);
+        });
+      }
+    }
+
+    // Populate dynamic Resource rows
+    if (editResourceRowsContainer) {
+      editResourceRowsContainer.innerHTML = '';
+      const resources = safeJsonArray(currentHackathon?.resource_links);
+      if (resources.length === 0) {
+        addResourceRow('', '');
+      } else {
+        resources.forEach(r => {
+          const url = typeof r === 'string' ? r : (r.url || '');
+          const label = typeof r === 'object' ? (r.label || '') : '';
+          addResourceRow(label, url);
+        });
+      }
+    }
+
+    editProjectShowcaseModal.classList.remove('hidden');
+  }
+
+  /**
+   * Close Edit Showcase Details Modal
+   */
+  function closeEditShowcaseModal() {
+    if (!editProjectShowcaseModal) return;
+    editProjectShowcaseModal.classList.add('hidden');
+    if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
+    if (btnSaveShowcaseDetails) {
+      btnSaveShowcaseDetails.disabled = false;
+      btnSaveShowcaseDetails.innerHTML = '<span>Save Changes</span>';
+    }
+  }
+
+  /**
+   * Toggle between Write and Preview Markdown tabs
+   */
+  function switchMarkdownTab(tab) {
+    if (tab === 'preview') {
+      if (tabWriteMd) tabWriteMd.classList.remove('active');
+      if (tabPreviewMd) tabPreviewMd.classList.add('active');
+      if (tabWriteContainer) tabWriteContainer.classList.add('hidden');
+      if (tabPreviewContainer) tabPreviewContainer.classList.remove('hidden');
+
+      const text = inputShowcaseDescMd?.value || '';
+      if (previewMarkdownOutput) {
+        previewMarkdownOutput.innerHTML = text.trim()
+          ? renderMarkdownSafe(text)
+          : '<em style="color:var(--text-muted); font-size: 0.88rem;">Nothing to preview yet. Write markdown in the "Write" tab.</em>';
+      }
+    } else {
+      if (tabWriteMd) tabWriteMd.classList.add('active');
+      if (tabPreviewMd) tabPreviewMd.classList.remove('active');
+      if (tabWriteContainer) tabWriteContainer.classList.remove('hidden');
+      if (tabPreviewContainer) tabPreviewContainer.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Add a dynamic YouTube row
+   */
+  function addYouTubeRow(url = '', title = '') {
+    if (!editYouTubeRowsContainer) return;
+    const row = document.createElement('div');
+    row.className = 'dynamic-item-row youtube-item-row';
+    row.innerHTML = `
+      <input type="text" class="form-input form-input-standalone input-yt-title" placeholder="Video Title (e.g. 2-Min Demo Pitch)" value="${escapeHtml(title)}" style="flex: 1;">
+      <input type="url" class="form-input form-input-standalone input-yt-url" placeholder="https://youtube.com/watch?v=..." value="${escapeHtml(url)}" style="flex: 2;">
+      <button type="button" class="btn-remove-dynamic-row" title="Remove video">×</button>
+    `;
+    const removeBtn = row.querySelector('.btn-remove-dynamic-row');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => row.remove());
+    }
+    editYouTubeRowsContainer.appendChild(row);
+  }
+
+  /**
+   * Add a dynamic Resource Link row
+   */
+  function addResourceRow(label = '', url = '') {
+    if (!editResourceRowsContainer) return;
+    const row = document.createElement('div');
+    row.className = 'dynamic-item-row resource-item-row';
+    row.innerHTML = `
+      <input type="text" class="form-input form-input-standalone input-res-label" placeholder="Label (e.g. Figma, Slide Deck, API Docs)" value="${escapeHtml(label)}" style="flex: 1;">
+      <input type="url" class="form-input form-input-standalone input-res-url" placeholder="https://..." value="${escapeHtml(url)}" style="flex: 2;">
+      <button type="button" class="btn-remove-dynamic-row" title="Remove link">×</button>
+    `;
+    const removeBtn = row.querySelector('.btn-remove-dynamic-row');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => row.remove());
+    }
+    editResourceRowsContainer.appendChild(row);
+  }
+
+  /**
+   * Save Project Showcase Details (repo_url, demo_url, project_description_md, youtube_urls, resource_links)
+   */
+  async function handleSaveShowcaseDetails(e) {
+    e.preventDefault();
+    if (!window.supabaseClient || !isLeader || !hackathonId) return;
+
+    const repoUrl = (inputShowcaseRepoUrl?.value || '').trim() || null;
+    const demoUrl = (inputShowcaseDemoUrl?.value || '').trim() || null;
+    const descMd = (inputShowcaseDescMd?.value || '').trim() || null;
+
+    // Collect YouTube URLs
+    const youtubeItems = [];
+    if (editYouTubeRowsContainer) {
+      const rows = editYouTubeRowsContainer.querySelectorAll('.youtube-item-row');
+      rows.forEach(r => {
+        const u = (r.querySelector('.input-yt-url')?.value || '').trim();
+        const t = (r.querySelector('.input-yt-title')?.value || '').trim();
+        if (u) {
+          youtubeItems.push({ title: t, url: u });
+        }
+      });
+    }
+
+    // Collect Resource Links
+    const resourceItems = [];
+    if (editResourceRowsContainer) {
+      const rows = editResourceRowsContainer.querySelectorAll('.resource-item-row');
+      rows.forEach(r => {
+        const u = (r.querySelector('.input-res-url')?.value || '').trim();
+        const l = (r.querySelector('.input-res-label')?.value || '').trim();
+        if (u) {
+          resourceItems.push({ label: l || 'Resource', url: u });
+        }
+      });
+    }
+
+    if (btnSaveShowcaseDetails) {
+      btnSaveShowcaseDetails.disabled = true;
+      btnSaveShowcaseDetails.innerHTML = '<span>Saving changes...</span>';
+    }
+    if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
+
+    try {
+      const payload = {
+        repo_url: repoUrl,
+        demo_url: demoUrl,
+        project_description_md: descMd,
+        youtube_urls: youtubeItems,
+        resource_links: resourceItems
+      };
+
+      const { data, error } = await window.supabaseClient
+        .from('hackathons')
+        .update(payload)
+        .eq('id', hackathonId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      if (currentHackathon) {
+        Object.assign(currentHackathon, payload);
+      }
+
+      renderProjectDetails(currentHackathon);
+      renderProjectShowcase(currentHackathon);
+
+      closeEditShowcaseModal();
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('Project showcase details updated!', 'success');
+      }
+
+    } catch (err) {
+      console.error('Error updating project showcase:', err);
+      if (editShowcaseErrorMessage) editShowcaseErrorMessage.textContent = err.message || 'Failed to update project details.';
+      if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.remove('hidden');
+    } finally {
+      if (btnSaveShowcaseDetails) {
+        btnSaveShowcaseDetails.disabled = false;
+        btnSaveShowcaseDetails.innerHTML = '<span>Save Changes</span>';
       }
     }
   }
@@ -809,6 +1253,9 @@
     // Render Locked Project Details Bar
     renderProjectDetails(hackathon);
 
+    // Render Project Showcase & Documentation Box
+    renderProjectShowcase(hackathon);
+
     // Load team members for assignee dropdown
     loadTeamMembers();
 
@@ -833,6 +1280,37 @@
     if (btnCancelEditUrls) {
       btnCancelEditUrls.addEventListener('click', () => {
         if (leaderLinkEditBar) leaderLinkEditBar.classList.add('hidden');
+      });
+    }
+
+    // Project Showcase Editor Controls
+    if (btnEditProjectShowcase) {
+      btnEditProjectShowcase.addEventListener('click', openEditShowcaseModal);
+    }
+    if (btnCloseEditShowcaseModal) {
+      btnCloseEditShowcaseModal.addEventListener('click', closeEditShowcaseModal);
+    }
+    if (btnCancelEditShowcase) {
+      btnCancelEditShowcase.addEventListener('click', closeEditShowcaseModal);
+    }
+    if (editShowcaseForm) {
+      editShowcaseForm.addEventListener('submit', handleSaveShowcaseDetails);
+    }
+    if (tabWriteMd) {
+      tabWriteMd.addEventListener('click', () => switchMarkdownTab('write'));
+    }
+    if (tabPreviewMd) {
+      tabPreviewMd.addEventListener('click', () => switchMarkdownTab('preview'));
+    }
+    if (btnAddYouTubeRow) {
+      btnAddYouTubeRow.addEventListener('click', () => addYouTubeRow('', ''));
+    }
+    if (btnAddResourceRow) {
+      btnAddResourceRow.addEventListener('click', () => addResourceRow('', ''));
+    }
+    if (editProjectShowcaseModal) {
+      editProjectShowcaseModal.addEventListener('click', (e) => {
+        if (e.target === editProjectShowcaseModal) closeEditShowcaseModal();
       });
     }
 
@@ -862,10 +1340,15 @@
       });
     }
 
-    // Close modal on Escape
+    // Close modals on Escape
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && createTaskModal && !createTaskModal.classList.contains('hidden')) {
-        closeCreateTaskModal();
+      if (e.key === 'Escape') {
+        if (createTaskModal && !createTaskModal.classList.contains('hidden')) {
+          closeCreateTaskModal();
+        }
+        if (editProjectShowcaseModal && !editProjectShowcaseModal.classList.contains('hidden')) {
+          closeEditShowcaseModal();
+        }
       }
     });
   }
@@ -878,11 +1361,12 @@
       setupFromBoardContext(e.detail);
     });
 
-    // Listen for board updates (such as locked idea updates or URL changes)
+    // Listen for board updates (such as locked idea updates, showcase updates, or URL changes)
     window.addEventListener('hackdeck:board-updated', (e) => {
       const updatedHackathon = e.detail?.hackathon;
       if (updatedHackathon) {
         renderProjectDetails(updatedHackathon);
+        renderProjectShowcase(updatedHackathon);
       }
     });
 

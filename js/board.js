@@ -322,6 +322,7 @@
           if (!updated) return;
 
           console.log('Realtime hackathon update received:', updated);
+          Object.assign(currentHackathon, updated);
 
           // 1. Phase change transition
           if (updated.phase && updated.phase !== currentHackathon.phase) {
