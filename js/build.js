@@ -366,7 +366,7 @@
     if (assignee) {
       const initial = (assignee.display_name || assignee.username || 'A').charAt(0).toUpperCase();
       const avatar = assignee.avatar_url
-        ? `<img class="task-assignee-avatar" src="${escapeHtml(assignee.avatar_url)}" alt="${escapeHtml(assignee.username)}">`
+        ? `<img class="task-assignee-avatar" src="${escapeHtml(assignee.avatar_url)}" alt="${escapeHtml(assignee.username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'20\\' height=\\'20\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f1f5f9\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'10\\' font-weight=\\'700\\' fill=\\'%23475569\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
         : `<div class="task-assignee-avatar">${escapeHtml(initial)}</div>`;
 
       assigneeMarkup = `

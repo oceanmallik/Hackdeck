@@ -125,6 +125,16 @@
   }
 
   /**
+   * Generate an SVG data URI avatar placeholder with user initial
+   */
+  function getInitialsAvatarSvg(name, size = 32) {
+    const initial = (name || 'H').charAt(0).toUpperCase();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="${Math.round(size * 0.44)}" font-weight="700" fill="#475569" dominant-baseline="middle" text-anchor="middle">${initial}</text></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+  window.getInitialsAvatarSvg = getInitialsAvatarSvg;
+
+  /**
    * Check public.profiles where id = user.id
    */
   async function checkUserProfile(user) {
@@ -152,6 +162,23 @@
       }
 
       if (profile && profile.username) {
+        // Synchronize Google avatar if missing from public.profiles
+        const meta = user.user_metadata || {};
+        const googleIdentity = user.identities?.find(i => i.provider === 'google')?.identity_data || {};
+        const googleAvatar = meta.avatar_url || meta.picture || googleIdentity.avatar_url || googleIdentity.picture || null;
+
+        if (googleAvatar && (!profile.avatar_url || profile.avatar_url !== googleAvatar)) {
+          profile.avatar_url = googleAvatar;
+          window.supabaseClient
+            .from('profiles')
+            .update({ avatar_url: googleAvatar })
+            .eq('id', user.id)
+            .then(() => {
+              console.log('Google avatar synced to profile.');
+            })
+            .catch(syncErr => console.warn('Avatar sync notice:', syncErr));
+        }
+
         currentProfile = profile;
         hideOnboardingModal();
         renderAuthenticatedUI(profile);
@@ -190,8 +217,9 @@
    */
   function openOnboardingModal(user) {
     const meta = user.user_metadata || {};
-    const displayName = meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : 'Hacker');
-    const avatarUrl = meta.avatar_url || meta.picture || '';
+    const googleIdentity = user.identities?.find(i => i.provider === 'google')?.identity_data || {};
+    const displayName = meta.full_name || meta.name || googleIdentity.full_name || googleIdentity.name || (user.email ? user.email.split('@')[0] : 'Hacker');
+    const avatarUrl = meta.avatar_url || meta.picture || googleIdentity.avatar_url || googleIdentity.picture || '';
     const suggestedUsername = deriveSuggestedUsername(displayName, user.email);
 
     // Pre-fill form inputs
@@ -203,13 +231,15 @@
     if (previewModalName) previewModalName.textContent = displayName;
     if (previewModalEmail) previewModalEmail.textContent = user.email || '';
     if (previewModalAvatar) {
+      previewModalAvatar.referrerPolicy = 'no-referrer';
+      previewModalAvatar.onerror = function () {
+        this.onerror = null;
+        this.src = getInitialsAvatarSvg(displayName, 48);
+      };
       if (avatarUrl) {
         previewModalAvatar.src = avatarUrl;
-        previewModalAvatar.onerror = () => {
-          previewModalAvatar.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}`;
-        };
       } else {
-        previewModalAvatar.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}`;
+        previewModalAvatar.src = getInitialsAvatarSvg(displayName, 48);
       }
     }
 
@@ -365,10 +395,10 @@
 
     // Avatar in Nav
     if (navUserAvatar) {
+      const initial = (profile.display_name || profile.username || 'H').charAt(0).toUpperCase();
       if (profile.avatar_url) {
-        navUserAvatar.innerHTML = `<img src="${profile.avatar_url}" alt="${profile.username}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        navUserAvatar.innerHTML = `<img src="${profile.avatar_url}" alt="${profile.username}" referrerpolicy="no-referrer" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.onerror=null;this.parentElement.textContent='${initial}';">`;
       } else {
-        const initial = (profile.display_name || profile.username || 'H').charAt(0).toUpperCase();
         navUserAvatar.textContent = initial;
       }
     }
@@ -378,10 +408,15 @@
       dashboardGreeting.textContent = `Welcome back, ${usernameDisplay}`;
     }
     if (dashboardAvatar) {
+      dashboardAvatar.referrerPolicy = 'no-referrer';
+      dashboardAvatar.onerror = function () {
+        this.onerror = null;
+        this.src = getInitialsAvatarSvg(profile.display_name || profile.username, 64);
+      };
       if (profile.avatar_url) {
         dashboardAvatar.src = profile.avatar_url;
       } else {
-        dashboardAvatar.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profile.display_name || profile.username)}`;
+        dashboardAvatar.src = getInitialsAvatarSvg(profile.display_name || profile.username, 64);
       }
     }
 

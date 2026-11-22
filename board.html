@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <title>Hackathon Board — Hackdeck</title>
   <meta name="description" content="Collaborative hackathon workspace for brainstorming, building, and shipping projects.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -382,26 +383,34 @@
       </section>
 
       <!-- Private Team Chat Panel (Only for Teammates, hidden for Spectators) -->
-      <div id="teamChatPanel" class="team-chat-drawer">
+      <div id="teamChatPanel" class="team-chat-drawer hidden">
         <div id="teamChatPopup" class="team-chat-popup hidden">
           <div class="team-chat-header">
-            <span class="team-chat-title">💬 Team Room</span>
-            <button id="btnCloseChat" class="btn-close-modal" style="padding: 2px;">
+            <div class="team-chat-header-info">
+              <span class="team-chat-title">💬 Team Room</span>
+              <span class="team-chat-sub">Live Teammate Chat</span>
+            </div>
+            <button id="btnCloseChat" class="btn-close-modal" style="padding: 2px;" aria-label="Close chat">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
-          <div class="team-chat-messages">
-            <div class="chat-bubble chat-bubble-peer">
-              <strong>@lead_dev:</strong> Team, lets make sure our submission deadline countdown is checked!
-            </div>
-            <div class="chat-bubble chat-bubble-me">
-              <strong>You:</strong> Working on the Phase 2 build deliverables right now.
-            </div>
+          <div id="teamChatMessages" class="team-chat-messages">
+            <!-- Dynamically populated from public.messages -->
           </div>
-          <div class="team-chat-footer member-only-control">
-            <input type="text" class="form-input form-input-standalone" placeholder="Type a message..." style="font-size: 0.82rem; padding: 6px 10px;">
-            <button class="btn btn-primary btn-sm" style="padding: 6px 12px;">Send</button>
-          </div>
+          <form id="teamChatForm" class="team-chat-footer member-only-control">
+            <input 
+              type="text" 
+              id="chatMessageInput" 
+              class="form-input form-input-standalone" 
+              placeholder="Type message... (Enter to send)" 
+              autocomplete="off" 
+              maxlength="1000"
+              style="font-size: 0.84rem; padding: 7px 12px;"
+            >
+            <button type="submit" id="btnSendChatMessage" class="btn btn-primary btn-sm" style="padding: 7px 14px;">
+              <span>Send</span>
+            </button>
+          </form>
         </div>
 
         <button id="btnToggleChat" class="team-chat-trigger-btn">
@@ -409,6 +418,7 @@
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
           <span>Team Chat</span>
+          <span id="chatUnreadDot" class="chat-unread-dot hidden"></span>
         </button>
       </div>
 
@@ -569,5 +579,6 @@
   <script src="js/board.js"></script>
   <script src="js/brainstorm.js"></script>
   <script src="js/build.js"></script>
+  <script src="js/chat.js"></script>
 </body>
 </html>

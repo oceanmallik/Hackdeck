@@ -401,10 +401,11 @@
       boardAuthBadge.classList.remove('hidden');
       if (boardUserHandle) boardUserHandle.textContent = `@${profile.username}`;
       if (boardUserAvatar) {
+        const initial = (profile.display_name || profile.username || 'H').charAt(0).toUpperCase();
         if (profile.avatar_url) {
-          boardUserAvatar.innerHTML = `<img src="${profile.avatar_url}" alt="${profile.username}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+          boardUserAvatar.innerHTML = `<img src="${profile.avatar_url}" alt="${profile.username}" referrerpolicy="no-referrer" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.onerror=null;this.parentElement.textContent='${initial}';">`;
         } else {
-          boardUserAvatar.textContent = (profile.display_name || profile.username || 'H').charAt(0).toUpperCase();
+          boardUserAvatar.textContent = initial;
         }
       }
     } else {
@@ -438,11 +439,26 @@
 
       if (currentUser) {
         // Fetch profile for header badge
-        const { data: profile } = await window.supabaseClient
+        let { data: profile } = await window.supabaseClient
           .from('profiles')
           .select('*')
           .eq('id', currentUser.id)
           .maybeSingle();
+
+        if (profile) {
+          const meta = currentUser.user_metadata || {};
+          const googleIdentity = currentUser.identities?.find(i => i.provider === 'google')?.identity_data || {};
+          const googleAvatar = meta.avatar_url || meta.picture || googleIdentity.avatar_url || googleIdentity.picture || null;
+          if (googleAvatar && (!profile.avatar_url || profile.avatar_url !== googleAvatar)) {
+            profile.avatar_url = googleAvatar;
+            window.supabaseClient
+              .from('profiles')
+              .update({ avatar_url: googleAvatar })
+              .eq('id', currentUser.id)
+              .then(() => {})
+              .catch(err => console.warn('Avatar sync notice:', err));
+          }
+        }
 
         currentProfile = profile;
         renderUserNav(profile);
