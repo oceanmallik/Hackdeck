@@ -1390,21 +1390,26 @@
 }
 
 /* Markdown Documentation Typography (Clean Minimal White) */
-.showcase-markdown-body {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 24px;
+.showcase-markdown-body,
+.markdown-preview-box,
+.markdown-body {
   font-size: 0.92rem;
   line-height: 1.65;
   color: var(--text-primary);
   word-break: break-word;
 }
 
-.showcase-markdown-body h1,
-.showcase-markdown-body h2,
-.showcase-markdown-body h3,
-.showcase-markdown-body h4 {
+.showcase-markdown-body {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
   font-weight: 700;
   color: var(--text-primary);
   margin-top: 20px;
@@ -1412,42 +1417,42 @@
   letter-spacing: -0.015em;
 }
 
-.showcase-markdown-body h1:first-child,
-.showcase-markdown-body h2:first-child,
-.showcase-markdown-body h3:first-child {
+.markdown-body h1:first-child,
+.markdown-body h2:first-child,
+.markdown-body h3:first-child {
   margin-top: 0;
 }
 
-.showcase-markdown-body h1 { font-size: 1.45rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
-.showcase-markdown-body h2 { font-size: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
-.showcase-markdown-body h3 { font-size: 1.1rem; }
-.showcase-markdown-body h4 { font-size: 0.98rem; }
+.markdown-body h1 { font-size: 1.45rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+.markdown-body h2 { font-size: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
+.markdown-body h3 { font-size: 1.1rem; }
+.markdown-body h4 { font-size: 0.98rem; }
 
-.showcase-markdown-body p {
+.markdown-body p {
   margin-bottom: 14px;
 }
 
-.showcase-markdown-body ul,
-.showcase-markdown-body ol {
+.markdown-body ul,
+.markdown-body ol {
   margin-bottom: 14px;
   padding-left: 24px;
 }
 
-.showcase-markdown-body li {
+.markdown-body li {
   margin-bottom: 6px;
 }
 
-.showcase-markdown-body a {
+.markdown-body a {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.showcase-markdown-body a:hover {
+.markdown-body a:hover {
   color: var(--accent-hover);
 }
 
-.showcase-markdown-body code {
+.markdown-body code {
   font-family: var(--font-mono);
   font-size: 0.85em;
   background-color: #e2e8f0;
@@ -1456,7 +1461,7 @@
   border-radius: 4px;
 }
 
-.showcase-markdown-body pre {
+.markdown-body pre {
   background-color: #0f172a;
   color: #f8fafc;
   padding: 16px;
@@ -1468,13 +1473,13 @@
   margin-bottom: 16px;
 }
 
-.showcase-markdown-body pre code {
+.markdown-body pre code {
   background-color: transparent;
   color: inherit;
   padding: 0;
 }
 
-.showcase-markdown-body blockquote {
+.markdown-body blockquote {
   border-left: 3px solid var(--accent);
   padding-left: 14px;
   margin: 14px 0;
@@ -1482,23 +1487,52 @@
   font-style: italic;
 }
 
-.showcase-markdown-body table {
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 20px 0;
+}
+
+/* Markdown Tables */
+.markdown-body table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 16px;
-  font-size: 0.86rem;
-}
-
-.showcase-markdown-body th,
-.showcase-markdown-body td {
+  margin: 16px 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
   border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  text-align: left;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: table;
 }
 
-.showcase-markdown-body th {
+.markdown-body thead {
   background-color: #f1f5f9;
-  font-weight: 600;
+}
+
+.markdown-body th {
+  background-color: #f1f5f9;
+  color: var(--text-primary);
+  font-weight: 700;
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+}
+
+.markdown-body td {
+  padding: 9px 14px;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  background-color: #ffffff;
+  vertical-align: top;
+}
+
+.markdown-body tr:nth-child(even) td {
+  background-color: #f8fafc;
+}
+
+.markdown-body tr:hover td {
+  background-color: #f1f5f9;
 }
 
 .showcase-empty-card {

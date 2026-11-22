@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="referrer" content="no-referrer">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Hackathon Board — Hackdeck</title>
   <meta name="description" content="Collaborative hackathon workspace for brainstorming, building, and shipping projects.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -456,7 +456,7 @@
               </svg>
               <span>Documentation & Overview</span>
             </h4>
-            <div id="showcaseMarkdownBody" class="showcase-markdown-body">
+            <div id="showcaseMarkdownBody" class="showcase-markdown-body markdown-body">
               <!-- Rendered dynamically via DOMPurify.sanitize(marked.parse(...)) -->
             </div>
           </div>
@@ -716,11 +716,11 @@
               id="inputShowcaseDescMd" 
               class="form-input form-input-standalone form-textarea-mono" 
               rows="9" 
-              placeholder="## Project Overview&#10;&#10;Describe your project, key features, architecture, and instructions here...&#10;&#10;- Feature 1&#10;- Feature 2&#10;&#10;```javascript&#10;// code example&#10;```"
+              placeholder="## Project Overview&#10;&#10;Describe your project, key features, architecture, and instructions here...&#10;&#10;### Tech Stack&#10;| Component | Technology | Version |&#10;| --- | --- | --- |&#10;| Frontend | Vanilla JS | ES2024 |&#10;| Backend | Supabase | v2 |&#10;&#10;```javascript&#10;// code example&#10;```"
             ></textarea>
           </div>
           <div id="tabPreviewContainer" class="markdown-tab-container hidden">
-            <div id="previewMarkdownOutput" class="markdown-preview-box">
+            <div id="previewMarkdownOutput" class="markdown-preview-box markdown-body">
               <!-- Live preview rendered here -->
             </div>
           </div>

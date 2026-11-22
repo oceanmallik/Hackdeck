@@ -262,7 +262,17 @@
    */
   function extractYouTubeId(url) {
     if (!url || typeof url !== 'string') return null;
-    const match = url.trim().match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    const str = url.trim();
+    // 1. Direct 11-char ID
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+      return str;
+    }
+    // 2. If user pasted an iframe embed code
+    const iframeMatch = str.match(/src=["'](?:https?:)?\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]{11})/i);
+    if (iframeMatch) return iframeMatch[1];
+
+    // 3. Standard and shortened URLs (watch, embed, shorts, live, youtu.be)
+    const match = str.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|live\/|watch\?(?:.*&)?v=))([a-zA-Z0-9_-]{11})/i);
     return match ? match[1] : null;
   }
 
@@ -284,19 +294,41 @@
   }
 
   /**
-   * Render Markdown safely using marked & DOMPurify
+   * Render Markdown safely using marked & DOMPurify with full GFM table support
    */
   function renderMarkdownSafe(mdText) {
     if (!mdText || !mdText.trim()) return '';
     try {
+      // Normalize tables by ensuring a blank line precedes any table row if preceded by text
+      const normalized = mdText.replace(/([^\n])\n(\|.+?\|[\t ]*\n\|[-: |]+?\|)/g, '$1\n\n$2');
+
+      // Configure marked for GitHub Flavored Markdown (GFM) tables
+      if (window.marked) {
+        try {
+          if (typeof window.marked.use === 'function') {
+            window.marked.use({ gfm: true, breaks: true });
+          } else if (typeof window.marked.setOptions === 'function') {
+            window.marked.setOptions({ gfm: true, breaks: true });
+          }
+        } catch (confErr) {
+          console.warn('Marked configuration notice:', confErr);
+        }
+      }
+
       let rawHtml = '';
       if (window.marked && typeof window.marked.parse === 'function') {
-        rawHtml = window.marked.parse(mdText);
+        rawHtml = window.marked.parse(normalized);
+      } else if (typeof window.marked === 'function') {
+        rawHtml = window.marked(normalized);
       } else {
-        rawHtml = escapeHtml(mdText).replace(/\n/g, '<br>');
+        rawHtml = escapeHtml(normalized).replace(/\n/g, '<br>');
       }
+
       if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
-        return window.DOMPurify.sanitize(rawHtml);
+        return window.DOMPurify.sanitize(rawHtml, {
+          ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'code', 'pre', 'blockquote', 'hr', 'span', 'div', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'del', 'sub', 'sup'],
+          ADD_ATTR: ['target', 'rel', 'class', 'align', 'style', 'href', 'title']
+        });
       }
       return rawHtml;
     } catch (e) {
@@ -372,11 +404,12 @@
               <div class="showcase-video-card">
                 <div class="video-responsive-wrap">
                   <iframe 
-                    src="https://www.youtube-nocookie.com/embed/${videoId}" 
+                    src="https://www.youtube.com/embed/${videoId}" 
                     title="${escapeHtml(title)}" 
                     loading="lazy" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    referrerpolicy="strict-origin-when-cross-origin"
                     allowfullscreen
                   ></iframe>
                 </div>
@@ -1301,6 +1334,18 @@
     }
     if (tabPreviewMd) {
       tabPreviewMd.addEventListener('click', () => switchMarkdownTab('preview'));
+    }
+    if (inputShowcaseDescMd) {
+      inputShowcaseDescMd.addEventListener('input', () => {
+        if (tabPreviewContainer && !tabPreviewContainer.classList.contains('hidden')) {
+          const text = inputShowcaseDescMd.value || '';
+          if (previewMarkdownOutput) {
+            previewMarkdownOutput.innerHTML = text.trim()
+              ? renderMarkdownSafe(text)
+              : '<em style="color:var(--text-muted); font-size: 0.88rem;">Nothing to preview yet. Write markdown in the "Write" tab.</em>';
+          }
+        }
+      });
     }
     if (btnAddYouTubeRow) {
       btnAddYouTubeRow.addEventListener('click', () => addYouTubeRow('', ''));
