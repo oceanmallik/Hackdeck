@@ -146,68 +146,64 @@
            PHASE 1: Brainstorming Phase UI
            =================================================================== -->
       <section id="phaseBrainstormContainer" class="phase-container">
-        <div class="phase-header-bar">
-          <div class="phase-heading-wrap">
-            <div>
-              <h2 class="phase-title">Idea Canvas & Brainstorming</h2>
-              <p class="phase-subtitle">Pitch project angles, vote on favorite concepts, and assemble hacker skillsets.</p>
-            </div>
-          </div>
-          <button class="btn btn-primary btn-sm member-only-control" id="btnPitchIdea">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>Pitch New Idea</span>
-          </button>
-        </div>
-
-        <!-- Brainstorm Ideas Wall -->
-        <div class="brainstorm-grid">
-          <div class="idea-card">
-            <div>
-              <div class="idea-card-header">
-                <span class="idea-category-tag">Autonomous Agents</span>
-                <span class="idea-votes-pill">▲ 8 votes</span>
+        <!-- Brainstorm 2-Column Layout -->
+        <div class="brainstorm-layout">
+          <!-- Main Area: Idea Polls Canvas -->
+          <div class="brainstorm-main-area">
+            <div class="phase-header-bar">
+              <div class="phase-heading-wrap">
+                <div>
+                  <h2 class="phase-title">Idea Canvas & Voting Polls</h2>
+                  <p class="phase-subtitle">Pitch project angles, vote on favorite concepts, and lock the winning idea.</p>
+                </div>
               </div>
-              <h3 class="idea-title">Multi-Agent Code Review & PR Assistant</h3>
-              <p class="idea-description">A real-time swarm of specialized agents that analyze pull requests for security vulnerabilities, test coverage, and architecture regressions.</p>
+              <button class="btn btn-primary btn-sm member-only-control" id="btnPitchIdea">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Pitch New Idea</span>
+              </button>
             </div>
-            <div class="idea-author">
-              <div class="idea-author-avatar"></div>
-              <span>Pitched by @lead_dev</span>
+
+            <!-- Dynamic Idea Polls Grid -->
+            <div id="ideaPollsGrid" class="brainstorm-grid">
+              <!-- Rendered dynamically by js/brainstorm.js -->
             </div>
           </div>
 
-          <div class="idea-card">
-            <div>
-              <div class="idea-card-header">
-                <span class="idea-category-tag">Developer Tools</span>
-                <span class="idea-votes-pill">▲ 6 votes</span>
+          <!-- Team Roster Sidebar -->
+          <aside id="teamRosterSidebar" class="team-roster-sidebar">
+            <div class="roster-header">
+              <div class="roster-title-group">
+                <h3 class="roster-title">Team Roster</h3>
+                <span id="teamMemberCount" class="roster-count-badge">0</span>
               </div>
-              <h3 class="idea-title">Interactive Terminal Sandbox for Docs</h3>
-              <p class="idea-description">Embed executable WebAssembly-based terminal playgrounds directly in markdown API documentation with zero server config.</p>
             </div>
-            <div class="idea-author">
-              <div class="idea-author-avatar"></div>
-              <span>Pitched by @hacker_one</span>
-            </div>
-          </div>
 
-          <div class="idea-card">
-            <div>
-              <div class="idea-card-header">
-                <span class="idea-category-tag">Web3 & AI</span>
-                <span class="idea-votes-pill">▲ 4 votes</span>
+            <!-- Leader Search & Add Member Input (Visible only if isLeader) -->
+            <div id="leaderAddMemberWrap" class="member-search-wrap member-only-control hidden">
+              <label class="form-label" style="font-size: 0.78rem;" for="inputSearchMember">Invite Member (@username)</label>
+              <div class="member-search-input-box">
+                <span class="member-search-prefix">@</span>
+                <input 
+                  type="text" 
+                  id="inputSearchMember" 
+                  class="form-input member-search-input" 
+                  placeholder="username..." 
+                  autocomplete="off"
+                >
+                <div id="memberSearchSpinner" class="search-mini-spinner hidden"></div>
               </div>
-              <h3 class="idea-title">ZK-Verified AI Model Inference</h3>
-              <p class="idea-description">Zero-knowledge proof verification pipeline to certify that open-weights model outputs were generated authentically without tampering.</p>
+              <!-- Dropdown Search Results -->
+              <div id="memberSearchResults" class="member-search-dropdown hidden"></div>
             </div>
-            <div class="idea-author">
-              <div class="idea-author-avatar"></div>
-              <span>Pitched by @crypto_coder</span>
+
+            <!-- Team Members List -->
+            <div id="teamMembersList" class="team-members-list">
+              <!-- Rendered dynamically by js/brainstorm.js -->
             </div>
-          </div>
+          </aside>
         </div>
       </section>
 
@@ -229,6 +225,16 @@
             </svg>
             <span>Add Task</span>
           </button>
+        </div>
+
+        <!-- Locked Winning Idea Mission Banner (Populated when Leader Locks Idea) -->
+        <div id="lockedIdeaBanner" class="locked-idea-mission-banner hidden">
+          <div class="mission-banner-icon">🎯</div>
+          <div class="mission-banner-content">
+            <span class="mission-banner-label">Winning Hackathon Idea Locked</span>
+            <h3 id="lockedIdeaTitle" class="mission-banner-title">Project Mission</h3>
+            <p id="lockedIdeaSummary" class="mission-banner-summary">Summary</p>
+          </div>
         </div>
 
         <!-- Task Kanban Columns -->
@@ -384,6 +390,67 @@
     </div>
   </main>
 
+  <!-- Pitch New Idea Modal -->
+  <div id="pitchIdeaModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pitchModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <div>
+          <h2 id="pitchModalTitle" class="modal-title">Pitch Project Idea</h2>
+          <p class="modal-description">Share your concept with the team so members can vote and discuss.</p>
+        </div>
+        <button id="btnClosePitchModal" type="button" class="btn-close-modal" aria-label="Close modal">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Error Banner -->
+      <div id="pitchModalErrorBanner" class="modal-error-banner hidden">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span id="pitchModalErrorMessage">Error</span>
+      </div>
+
+      <form id="pitchIdeaForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="pitchIdeaTitle">Idea Title *</label>
+          <input 
+            type="text" 
+            id="pitchIdeaTitle" 
+            class="form-input form-input-standalone" 
+            placeholder="e.g. AI-Powered Sandbox for Interactive Docs" 
+            maxlength="120" 
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="pitchIdeaDesc">Concept Description *</label>
+          <textarea 
+            id="pitchIdeaDesc" 
+            class="form-input form-input-standalone" 
+            placeholder="Explain the problem, proposed solution, and what technologies our team will use..." 
+            rows="4" 
+            style="resize: vertical; min-height: 90px;" 
+            required
+          ></textarea>
+        </div>
+
+        <div class="modal-form-actions">
+          <button type="button" id="btnCancelPitchModal" class="btn btn-outline">Cancel</button>
+          <button type="submit" id="btnSubmitPitchIdea" class="btn btn-primary">
+            <span>Pitch Idea</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
@@ -391,5 +458,6 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/board.js"></script>
+  <script src="js/brainstorm.js"></script>
 </body>
 </html>

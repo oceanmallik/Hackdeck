@@ -151,6 +151,16 @@
       if (phaseActionText) {
         phaseActionText.textContent = 'Switch to Brainstorm Phase ←';
       }
+
+      // Populate Locked Idea Mission Banner if available
+      const lockedIdeaBanner = document.getElementById('lockedIdeaBanner');
+      const lockedIdeaTitle = document.getElementById('lockedIdeaTitle');
+      const lockedIdeaSummary = document.getElementById('lockedIdeaSummary');
+      if (lockedIdeaBanner && currentHackathon?.locked_idea_title) {
+        lockedIdeaBanner.classList.remove('hidden');
+        if (lockedIdeaTitle) lockedIdeaTitle.textContent = currentHackathon.locked_idea_title;
+        if (lockedIdeaSummary) lockedIdeaSummary.textContent = currentHackathon.locked_idea_summary || '';
+      }
     } else {
       // Show Brainstorm Phase, hide Build
       if (phaseBuildContainer) phaseBuildContainer.classList.add('hidden');
@@ -351,6 +361,17 @@
             currentHackathon.event_url = updated.event_url;
             updateEventUrlBadge(updated.event_url);
           }
+
+          // 6. Locked idea updates
+          if (updated.locked_idea_title !== undefined) {
+            currentHackathon.locked_idea_title = updated.locked_idea_title;
+            currentHackathon.locked_idea_summary = updated.locked_idea_summary;
+          }
+
+          // Broadcast update event
+          window.dispatchEvent(new CustomEvent('hackdeck:board-updated', {
+            detail: { hackathon: currentHackathon }
+          }));
         }
       )
       .subscribe((status) => {
@@ -525,6 +546,27 @@
 
       // 9. Subscribe to Supabase Realtime for instant Phase 2 transition
       setupRealtimeSubscription(hackathon.id);
+
+      // 10. Expose global board context for brainstorm.js and other workspace modules
+      window.HackdeckBoard = {
+        getHackathon: () => currentHackathon,
+        getUser: () => currentUser,
+        getProfile: () => currentProfile,
+        isLeader: () => isLeader,
+        isMember: () => isMember,
+        isSpectator: () => isSpectator
+      };
+
+      window.dispatchEvent(new CustomEvent('hackdeck:board-ready', {
+        detail: {
+          hackathon: currentHackathon,
+          user: currentUser,
+          profile: currentProfile,
+          isLeader,
+          isMember,
+          isSpectator
+        }
+      }));
 
     } catch (err) {
       console.error('Unexpected error loading board:', err);
