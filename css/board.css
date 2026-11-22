@@ -1081,7 +1081,13 @@
   font-weight: 500;
 }
 
-.btn-delete-task {
+.task-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-task-action {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1092,6 +1098,11 @@
   align-items: center;
   justify-content: center;
   transition: var(--transition);
+}
+
+.btn-edit-task:hover {
+  background-color: #eff6ff;
+  color: var(--accent);
 }
 
 .btn-delete-task:hover {

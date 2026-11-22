@@ -47,10 +47,13 @@
     done: document.getElementById('count-done')
   };
 
-  // DOM Elements - Create Task Modal
+  // DOM Elements - Create / Edit Task Modal
   const btnAddTask = document.getElementById('btnAddTask');
   const createTaskModal = document.getElementById('createTaskModal');
+  const createTaskModalTitle = document.getElementById('createTaskModalTitle');
+  const createTaskModalDesc = document.getElementById('createTaskModalDesc');
   const createTaskForm = document.getElementById('createTaskForm');
+  const editingTaskIdInput = document.getElementById('editingTaskId');
   const btnCloseTaskModal = document.getElementById('btnCloseTaskModal');
   const btnCancelTaskModal = document.getElementById('btnCancelTaskModal');
   const btnSubmitTask = document.getElementById('btnSubmitTask');
@@ -383,14 +386,22 @@
       `;
     }
 
-    // Delete Button (visible when isMember is true)
-    const deleteBtnMarkup = isMember && !isSpectator
-      ? `<button class="btn-delete-task btn-trigger-delete-task" data-task-id="${escapeHtml(task.id)}" title="Delete task">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        </button>`
+    // Action Buttons (Edit & Delete, visible when isMember is true)
+    const cardActionsMarkup = isMember && !isSpectator
+      ? `<div class="task-card-actions">
+          <button type="button" class="btn-task-action btn-edit-task btn-trigger-edit-task" data-task-id="${escapeHtml(task.id)}" title="Edit task">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button type="button" class="btn-task-action btn-delete-task btn-trigger-delete-task" data-task-id="${escapeHtml(task.id)}" title="Delete task">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>`
       : '';
 
     return `
@@ -407,7 +418,7 @@
         </div>
         <div class="task-card-footer">
           ${assigneeMarkup}
-          ${deleteBtnMarkup}
+          ${cardActionsMarkup}
         </div>
       </div>
     `;
@@ -418,16 +429,30 @@
   // =========================================================================
 
   function bindCardEvents() {
-    // 1. Native Card Drag Events
+    // 1. Native Card Drag Events & Double Click to Edit
     if (isMember && !isSpectator) {
       const cards = document.querySelectorAll('.kanban-task-card[draggable="true"]');
       cards.forEach(card => {
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dblclick', () => {
+          const taskId = card.getAttribute('data-task-id');
+          if (taskId) openEditTaskModal(taskId);
+        });
       });
     }
 
-    // 2. Delete Task Buttons
+    // 2. Edit Task Buttons
+    const editBtns = document.querySelectorAll('.btn-trigger-edit-task');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const taskId = btn.getAttribute('data-task-id');
+        if (taskId) openEditTaskModal(taskId);
+      });
+    });
+
+    // 3. Delete Task Buttons
     const deleteBtns = document.querySelectorAll('.btn-trigger-delete-task');
     deleteBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -537,13 +562,18 @@
   }
 
   // =========================================================================
-  // 5. Task Creation & Deletion
+  // =========================================================================
+  // 5. Task Creation, Editing & Deletion
   // =========================================================================
 
   function openCreateTaskModal(defaultStatus = 'todo') {
     if (!isMember || isSpectator || !createTaskModal) return;
 
     if (createTaskForm) createTaskForm.reset();
+    if (editingTaskIdInput) editingTaskIdInput.value = '';
+    if (createTaskModalTitle) createTaskModalTitle.textContent = 'New Task';
+    if (createTaskModalDesc) createTaskModalDesc.textContent = 'Create an actionable deliverable for your team sprint.';
+    if (btnSubmitTask) btnSubmitTask.innerHTML = '<span>Create Task</span>';
     if (createTaskErrorBanner) createTaskErrorBanner.classList.add('hidden');
     if (taskStatusInput) taskStatusInput.value = defaultStatus;
 
@@ -553,10 +583,35 @@
     if (taskTitleInput) taskTitleInput.focus();
   }
 
+  function openEditTaskModal(taskId) {
+    if (!isMember || isSpectator || !createTaskModal) return;
+
+    const task = cachedTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (createTaskForm) createTaskForm.reset();
+    if (editingTaskIdInput) editingTaskIdInput.value = task.id;
+    if (createTaskModalTitle) createTaskModalTitle.textContent = 'Edit Task';
+    if (createTaskModalDesc) createTaskModalDesc.textContent = 'Update deliverable details, column status, or reassign a teammate.';
+    if (btnSubmitTask) btnSubmitTask.innerHTML = '<span>Save Changes</span>';
+    if (createTaskErrorBanner) createTaskErrorBanner.classList.add('hidden');
+
+    populateAssigneeDropdown();
+
+    if (taskTitleInput) taskTitleInput.value = task.title || '';
+    if (taskDescInput) taskDescInput.value = task.description || '';
+    if (taskStatusInput) taskStatusInput.value = task.status || 'todo';
+    if (taskAssigneeInput) taskAssigneeInput.value = task.assignee_id || '';
+
+    createTaskModal.classList.remove('hidden');
+    if (taskTitleInput) taskTitleInput.focus();
+  }
+
   function closeCreateTaskModal() {
     if (!createTaskModal) return;
     createTaskModal.classList.add('hidden');
     if (createTaskErrorBanner) createTaskErrorBanner.classList.add('hidden');
+    if (editingTaskIdInput) editingTaskIdInput.value = '';
     if (btnSubmitTask) {
       btnSubmitTask.disabled = false;
       btnSubmitTask.innerHTML = '<span>Create Task</span>';
@@ -569,8 +624,7 @@
   }
 
   /**
-   * Create Task: Inserts into public.tasks using:
-   * hackathon_id, title, description, status, position, assignee_id, created_by
+   * Save Task: Inserts new or updates existing in public.tasks
    * (STRICT NOTE: Do NOT use user_id on public.tasks!)
    */
   async function handleCreateTask(e) {
@@ -581,6 +635,7 @@
     const descVal = (taskDescInput?.value || '').trim();
     const statusVal = taskStatusInput?.value || 'todo';
     const assigneeVal = taskAssigneeInput?.value || null;
+    const editingId = (editingTaskIdInput?.value || '').trim();
 
     if (!titleVal) {
       showTaskModalError('Please enter a task title.');
@@ -588,49 +643,91 @@
       return;
     }
 
-    const tasksInStatus = cachedTasks.filter(t => t.status === statusVal);
-    const positionVal = tasksInStatus.length;
-
-    // Payload: uses created_by = currentUser.id (NO user_id on public.tasks!)
-    const payload = {
-      hackathon_id: hackathonId,
-      title: titleVal,
-      description: descVal || null,
-      status: statusVal,
-      position: positionVal,
-      assignee_id: assigneeVal || null,
-      created_by: currentUser.id
-    };
-
-    if (btnSubmitTask) {
-      btnSubmitTask.disabled = true;
-      btnSubmitTask.innerHTML = '<span>Creating task...</span>';
-    }
-    if (createTaskErrorBanner) createTaskErrorBanner.classList.add('hidden');
-
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('tasks')
-        .insert([payload])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      closeCreateTaskModal();
-      if (typeof window.showToast === 'function') {
-        window.showToast(`Task "${titleVal}" created!`, 'success');
-      }
-
-      await loadTasks();
-
-    } catch (err) {
-      console.error('Error creating task:', err);
-      showTaskModalError(err.message || 'Failed to create task. Check database permissions.');
-    } finally {
+    if (editingId) {
+      // 1. UPDATE EXISTING TASK
       if (btnSubmitTask) {
-        btnSubmitTask.disabled = false;
-        btnSubmitTask.innerHTML = '<span>Create Task</span>';
+        btnSubmitTask.disabled = true;
+        btnSubmitTask.innerHTML = '<span>Saving changes...</span>';
+      }
+      if (createTaskErrorBanner) createTaskErrorBanner.classList.add('hidden');
+
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('tasks')
+          .update({
+            title: titleVal,
+            description: descVal || null,
+            status: statusVal,
+            assignee_id: assigneeVal || null
+          })
+          .eq('id', editingId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        closeCreateTaskModal();
+        if (typeof window.showToast === 'function') {
+          window.showToast(`Task "${titleVal}" updated!`, 'success');
+        }
+
+        await loadTasks();
+
+      } catch (err) {
+        console.error('Error updating task:', err);
+        showTaskModalError(err.message || 'Failed to update task.');
+      } finally {
+        if (btnSubmitTask) {
+          btnSubmitTask.disabled = false;
+          btnSubmitTask.innerHTML = '<span>Save Changes</span>';
+        }
+      }
+    } else {
+      // 2. CREATE NEW TASK
+      const tasksInStatus = cachedTasks.filter(t => t.status === statusVal);
+      const positionVal = tasksInStatus.length;
+
+      // Payload: uses created_by = currentUser.id (NO user_id on public.tasks!)
+      const payload = {
+        hackathon_id: hackathonId,
+        title: titleVal,
+        description: descVal || null,
+        status: statusVal,
+        position: positionVal,
+        assignee_id: assigneeVal || null,
+        created_by: currentUser.id
+      };
+
+      if (btnSubmitTask) {
+        btnSubmitTask.disabled = true;
+        btnSubmitTask.innerHTML = '<span>Creating task...</span>';
+      }
+      if (createTaskErrorBanner) createTaskErrorBanner.classList.add('hidden');
+
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('tasks')
+          .insert([payload])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        closeCreateTaskModal();
+        if (typeof window.showToast === 'function') {
+          window.showToast(`Task "${titleVal}" created!`, 'success');
+        }
+
+        await loadTasks();
+
+      } catch (err) {
+        console.error('Error creating task:', err);
+        showTaskModalError(err.message || 'Failed to create task. Check database permissions.');
+      } finally {
+        if (btnSubmitTask) {
+          btnSubmitTask.disabled = false;
+          btnSubmitTask.innerHTML = '<span>Create Task</span>';
+        }
       }
     }
   }
