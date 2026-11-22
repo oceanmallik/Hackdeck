@@ -194,6 +194,20 @@
         throw error;
       }
 
+      // Also ensure leader is recorded in hackathon_members if not automatically done by DB trigger
+      try {
+        await window.supabaseClient
+          .from('hackathon_members')
+          .insert([{
+            hackathon_id: data.id,
+            user_id: user.id,
+            role: 'leader'
+          }]);
+      } catch (memberInsertErr) {
+        // Trigger or duplicate primary key may safely ignore
+        console.log('Leader membership auto-link info:', memberInsertErr);
+      }
+
       // Success
       closeCreateModal();
       if (typeof window.showToast === 'function') {
@@ -444,7 +458,8 @@
   }
 
   /**
-   * Query public.hackathons (RLS automatically filters to boards the user is a member of)
+   * Query user's hackathons:
+   * Only returns hackathons where current user is the leader OR a team member in hackathon_members.
    */
   async function loadMyHackathons() {
     if (!window.supabaseClient) return;
@@ -459,23 +474,113 @@
     }
 
     try {
-      const { data, error } = await window.supabaseClient
-        .from('hackathons')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.warn('Initial order query notice, attempting fallback:', error);
-        // Fallback without order by created_at in case created_at column differs
-        const fallback = await window.supabaseClient
-          .from('hackathons')
-          .select('*');
-
-        if (fallback.error) throw fallback.error;
-        cachedHackathons = fallback.data || [];
-      } else {
-        cachedHackathons = data || [];
+      // 1. Resolve current user identity
+      let user = window.currentUser || (window.HackdeckAuth && window.HackdeckAuth.getUser && window.HackdeckAuth.getUser());
+      if (!user && window.supabaseClient) {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        user = session?.user;
       }
+
+      if (!user) {
+        cachedHackathons = [];
+        if (statActiveBoards) statActiveBoards.textContent = '0';
+        if (myHackathonsGrid) {
+          myHackathonsGrid.innerHTML = `
+            <div class="empty-hackathons-state">
+              <div class="empty-icon-wrap">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+              </div>
+              <h4 class="empty-title">Sign in to view your hackathons</h4>
+              <p class="empty-desc">Your active hackathon boards and team projects will appear here once signed in.</p>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      // 2. Fetch hackathons where the user is a team member
+      const { data: memberRows, error: memberErr } = await window.supabaseClient
+        .from('hackathon_members')
+        .select('hackathon_id')
+        .eq('user_id', user.id);
+
+      if (memberErr) {
+        console.warn('Membership query notice:', memberErr);
+      }
+
+      const memberHackathonIds = (memberRows || [])
+        .map(r => r.hackathon_id)
+        .filter(Boolean);
+
+      // 3. Fetch hackathons led by the user
+      let leaderHackathons = [];
+      try {
+        const { data: leaderData, error: leaderErr } = await window.supabaseClient
+          .from('hackathons')
+          .select('*')
+          .eq('leader_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (leaderErr) {
+          console.warn('Leader query with order notice, trying fallback:', leaderErr);
+          const fallback = await window.supabaseClient
+            .from('hackathons')
+            .select('*')
+            .eq('leader_id', user.id);
+          if (fallback.error) throw fallback.error;
+          leaderHackathons = fallback.data || [];
+        } else {
+          leaderHackathons = leaderData || [];
+        }
+      } catch (leaderCatchErr) {
+        console.warn('Could not fetch led hackathons:', leaderCatchErr);
+      }
+
+      // 4. Fetch hackathons where user is a team member
+      let memberHackathons = [];
+      if (memberHackathonIds.length > 0) {
+        try {
+          const { data: memberData, error: memberQueryErr } = await window.supabaseClient
+            .from('hackathons')
+            .select('*')
+            .in('id', memberHackathonIds)
+            .order('created_at', { ascending: false });
+
+          if (memberQueryErr) {
+            console.warn('Member query with order notice, trying fallback:', memberQueryErr);
+            const fallback = await window.supabaseClient
+              .from('hackathons')
+              .select('*')
+              .in('id', memberHackathonIds);
+            if (fallback.error) throw fallback.error;
+            memberHackathons = fallback.data || [];
+          } else {
+            memberHackathons = memberData || [];
+          }
+        } catch (memberCatchErr) {
+          console.warn('Could not fetch member hackathons:', memberCatchErr);
+        }
+      }
+
+      // 5. Merge and deduplicate by hackathon ID
+      const hackathonMap = new Map();
+      leaderHackathons.forEach(h => {
+        if (h && h.id) hackathonMap.set(h.id, h);
+      });
+      memberHackathons.forEach(h => {
+        if (h && h.id) hackathonMap.set(h.id, h);
+      });
+
+      cachedHackathons = Array.from(hackathonMap.values());
+      // Sort by created_at (descending) or deadline
+      cachedHackathons.sort((a, b) => {
+        const timeA = new Date(a.created_at || a.deadline_at || 0).getTime();
+        const timeB = new Date(b.created_at || b.deadline_at || 0).getTime();
+        return timeB - timeA;
+      });
 
       // Update Active Boards stat
       if (statActiveBoards) {
