@@ -610,19 +610,34 @@
     if (btnToggleChat && teamChatPopup) {
       btnToggleChat.addEventListener('click', () => {
         teamChatPopup.classList.toggle('hidden');
+        if (teamChatPanel) {
+          if (teamChatPopup.classList.contains('hidden')) {
+            teamChatPanel.classList.add('drawer-collapsed');
+          } else {
+            teamChatPanel.classList.remove('drawer-collapsed');
+          }
+        }
       });
     }
     if (btnCloseChat && teamChatPopup) {
       btnCloseChat.addEventListener('click', () => {
         teamChatPopup.classList.add('hidden');
+        if (teamChatPanel) {
+          teamChatPanel.classList.add('drawer-collapsed');
+        }
       });
     }
 
-    // Close chat on click outside
+    // Close chat on click outside (only in mobile / small-screen overlay mode)
     document.addEventListener('click', (e) => {
-      if (teamChatPanel && teamChatPopup && !teamChatPopup.classList.contains('hidden')) {
-        if (!teamChatPanel.contains(e.target)) {
-          teamChatPopup.classList.add('hidden');
+      if (window.innerWidth <= 1024) {
+        if (teamChatPanel && teamChatPopup && !teamChatPopup.classList.contains('hidden')) {
+          if (!teamChatPanel.contains(e.target) && (!btnToggleChat || !btnToggleChat.contains(e.target))) {
+            teamChatPopup.classList.add('hidden');
+            if (teamChatPanel) {
+              teamChatPanel.classList.add('drawer-collapsed');
+            }
+          }
         }
       }
     });

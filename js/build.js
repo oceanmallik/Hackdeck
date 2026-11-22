@@ -846,7 +846,7 @@
     if (assignee) {
       const initial = (assignee.display_name || assignee.username || 'A').charAt(0).toUpperCase();
       const avatar = assignee.avatar_url
-        ? `<img class="task-assignee-avatar" src="${escapeHtml(assignee.avatar_url)}" alt="${escapeHtml(assignee.username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'20\\' height=\\'20\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f1f5f9\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'10\\' font-weight=\\'700\\' fill=\\'%23475569\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
+        ? `<img class="task-assignee-avatar" src="${escapeHtml(assignee.avatar_url)}" alt="${escapeHtml(assignee.username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'20\\' height=\\'20\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'10\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
         : `<div class="task-assignee-avatar">${escapeHtml(initial)}</div>`;
 
       assigneeMarkup = `
@@ -1362,6 +1362,56 @@
     // Task Creation Buttons
     if (btnAddTask) {
       btnAddTask.addEventListener('click', () => openCreateTaskModal('todo'));
+    }
+
+    // Build Phase View Switcher (Task Board vs Project Showcase toggle)
+    const tabViewTasks = document.getElementById('tabViewTasks');
+    const tabViewShowcase = document.getElementById('tabViewShowcase');
+    const kanbanBoard = document.getElementById('kanbanBoard');
+    const lockedProjectDetailsBar = document.getElementById('lockedProjectDetailsBar');
+    const projectShowcaseBoxEl = document.getElementById('projectShowcaseBox');
+    const buildPhaseTitle = document.getElementById('buildPhaseTitle');
+    const buildPhaseSubtitle = document.getElementById('buildPhaseSubtitle');
+
+    function switchBuildView(view) {
+      if (view === 'showcase') {
+        if (tabViewTasks) {
+          tabViewTasks.classList.remove('active');
+          tabViewTasks.setAttribute('aria-selected', 'false');
+        }
+        if (tabViewShowcase) {
+          tabViewShowcase.classList.add('active');
+          tabViewShowcase.setAttribute('aria-selected', 'true');
+        }
+        if (kanbanBoard) kanbanBoard.classList.add('hidden');
+        if (lockedProjectDetailsBar) lockedProjectDetailsBar.classList.add('hidden');
+        if (projectShowcaseBoxEl) projectShowcaseBoxEl.classList.remove('hidden');
+        if (btnAddTask) btnAddTask.classList.add('hidden');
+        if (buildPhaseTitle) buildPhaseTitle.textContent = 'Project Showcase & Documentation';
+        if (buildPhaseSubtitle) buildPhaseSubtitle.textContent = 'Live prototype links, video walkthroughs, and technical documentation.';
+      } else {
+        if (tabViewTasks) {
+          tabViewTasks.classList.add('active');
+          tabViewTasks.setAttribute('aria-selected', 'true');
+        }
+        if (tabViewShowcase) {
+          tabViewShowcase.classList.remove('active');
+          tabViewShowcase.setAttribute('aria-selected', 'false');
+        }
+        if (kanbanBoard) kanbanBoard.classList.remove('hidden');
+        if (lockedProjectDetailsBar) lockedProjectDetailsBar.classList.remove('hidden');
+        if (projectShowcaseBoxEl) projectShowcaseBoxEl.classList.add('hidden');
+        if (btnAddTask && isMember && !isSpectator) btnAddTask.classList.remove('hidden');
+        if (buildPhaseTitle) buildPhaseTitle.textContent = 'Build Sprint & Task Kanban';
+        if (buildPhaseSubtitle) buildPhaseSubtitle.textContent = 'Track deliverables, assign tasks, and assemble your final submission checklist.';
+      }
+    }
+
+    if (tabViewTasks) {
+      tabViewTasks.addEventListener('click', () => switchBuildView('tasks'));
+    }
+    if (tabViewShowcase) {
+      tabViewShowcase.addEventListener('click', () => switchBuildView('showcase'));
     }
 
     // Column quick add buttons

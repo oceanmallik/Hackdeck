@@ -129,7 +129,7 @@
    */
   function getInitialsAvatarSvg(name, size = 32) {
     const initial = (name || 'H').charAt(0).toUpperCase();
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="${Math.round(size * 0.44)}" font-weight="700" fill="#475569" dominant-baseline="middle" text-anchor="middle">${initial}</text></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="100%" height="100%" fill="#232323"/><text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="${Math.round(size * 0.44)}" font-weight="600" fill="#a1a1a1" dominant-baseline="middle" text-anchor="middle">${initial}</text></svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
   window.getInitialsAvatarSvg = getInitialsAvatarSvg;

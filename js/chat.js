@@ -303,7 +303,7 @@
     if (teamChatMessages) {
       teamChatMessages.innerHTML = `
         <div class="chat-loading-spinner">
-          <span class="spinner-small" style="width: 14px; height: 14px; border: 2px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite;"></span>
+          <span class="spinner-small" style="width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--text-primary); border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite;"></span>
           <span>Loading messages...</span>
         </div>
       `;

@@ -172,7 +172,7 @@
       const roleBadgeClass = isLeaderMember ? 'role-badge-leader' : 'role-badge-member';
 
       const avatarMarkup = avatarUrl
-        ? `<img class="team-member-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f1f5f9\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'14\\' font-weight=\\'700\\' fill=\\'%23475569\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
+        ? `<img class="team-member-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'14\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
         : `<div class="team-member-avatar">${escapeHtml(initial)}</div>`;
 
       return `
@@ -228,7 +228,7 @@
         memberSearchResults.innerHTML = candidates.map(p => {
           const initial = (p.display_name || p.username || 'U').charAt(0).toUpperCase();
           const avatar = p.avatar_url
-            ? `<img class="search-item-avatar" src="${escapeHtml(p.avatar_url)}" alt="${escapeHtml(p.username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'28\\' height=\\'28\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f1f5f9\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'12\\' font-weight=\\'700\\' fill=\\'%23475569\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
+            ? `<img class="search-item-avatar" src="${escapeHtml(p.avatar_url)}" alt="${escapeHtml(p.username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'28\\' height=\\'28\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'12\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
             : `<div class="search-item-avatar" style="display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--text-muted);">${escapeHtml(initial)}</div>`;
 
           return `
@@ -423,7 +423,7 @@
       const initial = (authorDisplayName || authorUsername).charAt(0).toUpperCase();
 
       const authorAvatarMarkup = author.avatar_url
-        ? `<img class="idea-author-avatar" src="${escapeHtml(author.avatar_url)}" alt="${escapeHtml(authorUsername)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'24\\' height=\\'24\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f1f5f9\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'11\\' font-weight=\\'700\\' fill=\\'%23475569\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
+        ? `<img class="idea-author-avatar" src="${escapeHtml(author.avatar_url)}" alt="${escapeHtml(authorUsername)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'24\\' height=\\'24\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'11\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
         : `<div class="idea-author-avatar">${escapeHtml(initial)}</div>`;
 
       // Vote Button: Primary if voted, Outline if not voted
