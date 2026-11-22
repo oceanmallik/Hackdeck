@@ -182,24 +182,47 @@
           </div>
 
           <!-- Team Roster Sidebar -->
-          <aside id="teamRosterSidebar" class="team-roster-sidebar">
+          <aside id="teamRosterSidebar" class="team-roster-sidebar" aria-label="Team Members Roster">
             <div class="roster-header">
               <div class="roster-title-group">
-                <h3 class="roster-title">Team Roster</h3>
-                <span id="teamMemberCount" class="roster-count-badge">0</span>
+                <div class="roster-header-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+                <div>
+                  <div class="roster-title-row">
+                    <h3 class="roster-title">Team Roster</h3>
+                    <span id="teamMemberCount" class="roster-count-badge">0</span>
+                  </div>
+                  <p class="roster-subtitle">Collaborators & roles</p>
+                </div>
               </div>
+              <button type="button" id="btnShareRosterLink" class="btn-roster-share" title="Copy workspace invite link" aria-label="Copy workspace invite link">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                <span>Share</span>
+              </button>
             </div>
 
             <!-- Leader Search & Add Member Input (Visible only if isLeader) -->
             <div id="leaderAddMemberWrap" class="member-search-wrap member-only-control hidden">
-              <label class="form-label" for="inputSearchMember">Invite Member (@username)</label>
+              <label class="form-label roster-search-label" for="inputSearchMember">
+                <span>Invite Member</span>
+                <span class="roster-search-hint">by @handle</span>
+              </label>
               <div class="member-search-input-box">
                 <span class="member-search-prefix">@</span>
                 <input 
                   type="text" 
                   id="inputSearchMember" 
                   class="form-input member-search-input" 
-                  placeholder="username..." 
+                  placeholder="search by handle..." 
                   autocomplete="off"
                 >
                 <div id="memberSearchSpinner" class="search-mini-spinner hidden"></div>

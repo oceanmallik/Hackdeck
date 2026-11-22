@@ -142,8 +142,17 @@
 
     if (members.length === 0) {
       teamMembersList.innerHTML = `
-        <div style="font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 16px 0;">
-          No members yet.
+        <div class="empty-roster-state">
+          <div class="empty-roster-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div class="empty-roster-title">No team members yet</div>
+          <p class="empty-roster-desc">Invite teammates by @handle to collaborate on ideas and deliverables.</p>
         </div>
       `;
       return;
@@ -160,6 +169,8 @@
       return aName.localeCompare(bName);
     });
 
+    const isCurrentLeader = Boolean(isLeader);
+
     teamMembersList.innerHTML = sorted.map(m => {
       const p = m.profiles || {};
       const username = p.username || 'hacker';
@@ -172,19 +183,34 @@
       const roleBadgeClass = isLeaderMember ? 'role-badge-leader' : 'role-badge-member';
 
       const avatarMarkup = avatarUrl
-        ? `<img class="team-member-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'14\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
+        ? `<img class="team-member-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'32\\' height=\\'32\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'13\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
         : `<div class="team-member-avatar">${escapeHtml(initial)}</div>`;
+
+      // Allow leader to remove non-leader members
+      const removeBtnMarkup = (isCurrentLeader && !isLeaderMember)
+        ? `
+          <button type="button" class="btn-remove-member" data-user-id="${escapeHtml(m.user_id)}" data-username="${escapeHtml(username)}" title="Remove @${escapeHtml(username)} from team" aria-label="Remove member">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        `
+        : '';
 
       return `
         <div class="team-member-item">
           <div class="team-member-profile">
             ${avatarMarkup}
             <div class="team-member-text">
-              <span class="team-member-name">${escapeHtml(displayName)}</span>
+              <span class="team-member-name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
               <span class="team-member-handle">@${escapeHtml(username)}</span>
             </div>
           </div>
-          <span class="role-badge ${roleBadgeClass}">${escapeHtml(roleText)}</span>
+          <div class="team-member-actions">
+            <span class="role-badge ${roleBadgeClass}">
+              ${isLeaderMember ? '<span class="role-dot role-dot-leader" aria-hidden="true"></span>' : ''}
+              <span>${escapeHtml(roleText)}</span>
+            </span>
+            ${removeBtnMarkup}
+          </div>
         </div>
       `;
     }).join('');
@@ -220,8 +246,8 @@
 
       if (candidates.length === 0) {
         memberSearchResults.innerHTML = `
-          <div style="padding: 10px 12px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
-            No users available to add.
+          <div class="search-empty-state">
+            <span>No users available to add</span>
           </div>
         `;
       } else {
@@ -229,19 +255,19 @@
           const initial = (p.display_name || p.username || 'U').charAt(0).toUpperCase();
           const avatar = p.avatar_url
             ? `<img class="search-item-avatar" src="${escapeHtml(p.avatar_url)}" alt="${escapeHtml(p.username)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'28\\' height=\\'28\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23232323\\'/><text x=\\'50%\\' y=\\'54%\\' font-family=\\'sans-serif\\' font-size=\\'12\\' font-weight=\\'600\\' fill=\\'%23a1a1a1\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\'>${escapeHtml(initial)}</text></svg>';">`
-            : `<div class="search-item-avatar" style="display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--text-muted);">${escapeHtml(initial)}</div>`;
+            : `<div class="search-item-avatar">${escapeHtml(initial)}</div>`;
 
           return `
             <div class="member-search-item" data-user-id="${escapeHtml(p.id)}" data-username="${escapeHtml(p.username)}">
               <div class="search-item-info">
                 ${avatar}
-                <div>
+                <div class="search-item-text">
                   <div class="search-item-name">${escapeHtml(p.display_name || p.username)}</div>
                   <div class="search-item-handle">@${escapeHtml(p.username)}</div>
                 </div>
               </div>
-              <button type="button" class="btn btn-outline btn-sm btn-add-candidate" data-user-id="${escapeHtml(p.id)}" style="padding: 3px 8px; font-size: 0.75rem;">
-                + Add
+              <button type="button" class="btn btn-outline btn-xs btn-add-candidate" data-user-id="${escapeHtml(p.id)}">
+                <span>+ Add</span>
               </button>
             </div>
           `;
@@ -847,6 +873,61 @@
           const item = btnAdd.closest('.member-search-item');
           const username = item ? item.getAttribute('data-username') : 'user';
           addMemberToTeam(userId, username);
+        }
+      });
+    }
+
+    // Delegate remove member buttons in team roster
+    if (teamMembersList) {
+      teamMembersList.addEventListener('click', async (e) => {
+        const btnRemove = e.target.closest('.btn-remove-member');
+        if (btnRemove) {
+          const userId = btnRemove.getAttribute('data-user-id');
+          const username = btnRemove.getAttribute('data-username') || 'member';
+          if (!userId || !hackathonId) return;
+
+          const confirmed = window.confirm(`Remove @${username} from this hackathon team?`);
+          if (!confirmed) return;
+
+          try {
+            const { error } = await window.supabaseClient
+              .from('hackathon_members')
+              .delete()
+              .eq('hackathon_id', hackathonId)
+              .eq('user_id', userId);
+
+            if (error) throw error;
+
+            if (typeof window.showToast === 'function') {
+              window.showToast(`Removed @${username} from team.`, 'info');
+            }
+
+            await loadTeamRoster();
+          } catch (err) {
+            console.error('Error removing team member:', err);
+            if (typeof window.showToast === 'function') {
+              window.showToast(err.message || 'Could not remove member.', 'error');
+            }
+          }
+        }
+      });
+    }
+
+    // Share roster invite link button
+    const btnShareRosterLink = document.getElementById('btnShareRosterLink');
+    if (btnShareRosterLink) {
+      btnShareRosterLink.addEventListener('click', () => {
+        const inviteUrl = window.location.href;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(inviteUrl).then(() => {
+            if (typeof window.showToast === 'function') {
+              window.showToast('Workspace invite link copied to clipboard!', 'success');
+            }
+          }).catch(() => {
+            window.prompt('Copy workspace invite link:', inviteUrl);
+          });
+        } else {
+          window.prompt('Copy workspace invite link:', inviteUrl);
         }
       });
     }
