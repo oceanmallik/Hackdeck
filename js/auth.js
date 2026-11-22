@@ -68,6 +68,9 @@
     }, 3800);
   }
 
+  // Expose toast globally
+  window.showToast = showToast;
+
   /**
    * Google OAuth sign-in flow
    */
@@ -385,6 +388,13 @@
     // Reveal Hackathon Dashboard, hide Hero
     heroSection.classList.add('hidden');
     dashboardContainer.classList.remove('hidden');
+
+    // Expose auth state globally and notify other modules
+    window.currentUser = currentUser;
+    window.currentProfile = profile;
+    window.dispatchEvent(new CustomEvent('hackdeck:auth-change', {
+      detail: { user: currentUser, profile: profile }
+    }));
   }
 
   /**
@@ -400,6 +410,13 @@
 
     if (btnGoogleSignIn) btnGoogleSignIn.disabled = false;
     if (btnHeroGoogleSignIn) btnHeroGoogleSignIn.disabled = false;
+
+    // Expose auth state globally and notify other modules
+    window.currentUser = null;
+    window.currentProfile = null;
+    window.dispatchEvent(new CustomEvent('hackdeck:auth-change', {
+      detail: { user: null, profile: null }
+    }));
   }
 
   /**
