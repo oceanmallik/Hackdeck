@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <title>Hackdeck</title>
-  <meta name="description" content="Collaborative hackathon platform to form teams, brainstorm ideas, and ship projects.">
+  <title>Hackdeck | A Notepad for Devs</title>
+  <meta name="description" content="Hackdeck | A Notepad for Devs. Draft your projects, plan sprint tasks, chat with teammates, and race against the hackathon countdown timer.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="alternate icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="favicon.png">
@@ -33,7 +33,7 @@
           </svg>
         </div>
         <span>Hackdeck</span>
-        <span class="brand-badge">Alpha</span>
+        <span class="brand-badge">A Notepad for Devs</span>
       </a>
 
       <!-- Auth State Navigation -->
@@ -72,193 +72,313 @@
       <div class="container">
         <div class="hero-pill">
           <span class="hero-pill-dot"></span>
-          <span>Next-gen Hackathon Collaboration</span>
+          <span>A Notepad for Devs</span>
         </div>
         
         <h1 class="hero-title">
-          Build, assemble teams, and ship <span class="hero-title-gradient">hackathons faster.</span>
+          Draft projects, plan sprints, and <span class="hero-title-gradient">ship together.</span>
         </h1>
         
         <p class="hero-subtitle">
-          Hackdeck is the board platform where hackers create boards, pitch ideas, recruit skilled teammates, and submit winning projects in one organized space.
+          The collaborative board where devs draft project blueprints, plan tasks on a live Kanban board, chat in real time, and beat the hackathon clock.
         </p>
 
         <div class="hero-actions">
-          <button id="btnHeroGoogleSignIn" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <button id="btnHeroGoogleSignIn" class="btn btn-hero-google">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
             </svg>
             <span>Continue with Google</span>
           </button>
-          <a href="#features" class="btn btn-outline">
-            <span>Explore Features</span>
+          <a href="#boardPreview" class="btn btn-hero-explore">
+            <span>Explore Workspace</span>
           </a>
         </div>
 
-        <!-- Feature Previews (Bento Grid) -->
-        <div id="features" class="hero-features-grid">
-          <!-- Card 1 (Spans 2 columns on desktop) -->
-          <div class="feature-card card">
-            <div>
-              <div class="feature-header-row card-header-row">
-                <div class="card-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
-                  </svg>
+        <!-- Live Interactive Visual Board Preview -->
+        <div id="boardPreview" class="hero-board-showcase">
+          <!-- Window Shell: bg-card, 1px border, 16px radius, padding 0, flat, no shadow -->
+          <div class="hero-board-window">
+            
+            <!-- Window Header Bar: bg-page, 1px bottom border, 12px 16px padding -->
+            <div class="board-window-bar">
+              <div class="board-window-meta">
+                <div class="board-meta-path">
+                  <span class="meta-crumb-root">oceanmallik</span>
+                  <span class="meta-crumb-slash">/</span>
+                  <span class="meta-crumb-title">Hackdeck</span>
                 </div>
-                <h3 class="feature-title card-title">Idea Brainstorming</h3>
+                <span class="preview-phase-pill">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  <span>Build phase</span>
+                </span>
               </div>
-              <p class="feature-desc card-desc">
-                Pitch project concepts, cast votes with teammates, and <strong>cluster winning angles visually</strong> before sprint day.
-              </p>
+              
+              <div class="board-window-timer">
+                <div class="preview-timer-box" title="Submission deadline countdown">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="10" y1="2" x2="14" y2="2"></line>
+                    <line x1="12" y1="14" x2="15" y2="11"></line>
+                    <circle cx="12" cy="14" r="8"></circle>
+                  </svg>
+                  <span class="timer-tag">Submission deadline:</span>
+                  <span id="heroCountdownTimer" class="timer-clock">18h 42m 15s</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Illustration Slot -->
-            <div class="card-illustration" aria-hidden="true">
-              <div class="card-concentric-squares">
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
+            <!-- Window Canvas Body: padding 20px -->
+            <div class="board-window-canvas">
+              
+              <!-- Inner Panel 1: Project Draft Details (bg-page, 1px border, 16px radius, 20px padding) -->
+              <div class="board-canvas-header">
+                <div class="canvas-header-title-row">
+                  <div>
+                    <span class="canvas-label-badge">Project draft</span>
+                    <h2 class="canvas-project-name">Hackdeck // A Notepad for Devs</h2>
+                  </div>
+                  <div class="canvas-header-links">
+                    <a href="https://github.com/oceanmallik/Hackdeck" target="_blank" rel="noopener noreferrer" class="canvas-badge-link" title="GitHub Repository">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                      <span>github.com/oceanmallik/Hackdeck</span>
+                    </a>
+                    <a href="https://hackdeck.devs.surf" target="_blank" rel="noopener noreferrer" class="canvas-badge-link" title="Live Demo">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                      <span>hackdeck.devs.surf</span>
+                    </a>
+                  </div>
+                </div>
+                <p class="canvas-project-pitch">
+                  An open source modular workspace for hackathon teams to brainstorm ideas, plan sprint tasks on a live Kanban board, and collaborate before the countdown ends.
+                </p>
               </div>
-              <div class="card-illustration-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
-                </svg>
-              </div>
-            </div>
 
-            <!-- Footer Checklist -->
-            <ul class="card-checklist">
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>Interactive idea pitch canvas with live upvotes</span>
-              </li>
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>Real-time team voting and consensus ranking</span>
-              </li>
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>One-click winning mission statement locking</span>
-              </li>
-            </ul>
+              <!-- Main Split: Inner Panel 2 (Kanban) & Inner Panel 3 (Team Room) -->
+              <div class="board-canvas-grid">
+                
+                <!-- Inner Panel 2: Sprint Task Kanban (bg-page, 1px border, 16px radius, 20px padding) -->
+                <div class="board-canvas-kanban">
+                  <div class="canvas-section-heading">
+                    <div class="section-heading-left">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>
+                      <span>Sprint task kanban</span>
+                    </div>
+                    <span class="kanban-total-badge">5 tasks</span>
+                  </div>
+
+                  <div class="kanban-preview-columns">
+                    
+                    <!-- Column 1: To Do -->
+                    <div class="kanban-col-preview">
+                      <div class="col-preview-header">
+                        <span class="col-dot" aria-hidden="true"></span>
+                        <span class="col-title">To do</span>
+                        <span class="col-count">1</span>
+                      </div>
+                      <div class="col-preview-cards">
+                        <div class="kanban-card-preview">
+                          <div class="kcard-top">
+                            <span class="kcard-tag">Pitch</span>
+                            <span class="kcard-time">30m</span>
+                          </div>
+                          <div class="kcard-title">Record 3-min demo video walkthrough</div>
+                          <div class="kcard-bottom">
+                            <div class="kcard-avatar" aria-hidden="true">O</div>
+                            <span class="kcard-assignee">@oceanmallik</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Column 2: In Progress -->
+                    <div class="kanban-col-preview">
+                      <div class="col-preview-header">
+                        <span class="col-dot" aria-hidden="true"></span>
+                        <span class="col-title">In progress</span>
+                        <span class="col-count">2</span>
+                      </div>
+                      <div class="col-preview-cards">
+                        <div class="kanban-card-preview kcard-active">
+                          <div class="kcard-top">
+                            <span class="kcard-tag">P0 · High</span>
+                            <span class="kcard-status-label">Active</span>
+                          </div>
+                          <div class="kcard-title">Real-time team chat with edit & delete</div>
+                          <div class="kcard-bottom">
+                            <div class="kcard-avatar" aria-hidden="true">O</div>
+                            <span class="kcard-assignee">@oceanmallik</span>
+                          </div>
+                        </div>
+                        <div class="kanban-card-preview">
+                          <div class="kcard-top">
+                            <span class="kcard-tag">UI</span>
+                            <span class="kcard-time">1h</span>
+                          </div>
+                          <div class="kcard-title">Project showcase inline editing cards</div>
+                          <div class="kcard-bottom">
+                            <div class="kcard-avatar" aria-hidden="true">S</div>
+                            <span class="kcard-assignee">@sam_dev</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Column 3: Done -->
+                    <div class="kanban-col-preview">
+                      <div class="col-preview-header">
+                        <span class="col-dot" aria-hidden="true"></span>
+                        <span class="col-title">Done</span>
+                        <span class="col-count">2</span>
+                      </div>
+                      <div class="col-preview-cards">
+                        <div class="kanban-card-preview">
+                          <div class="kcard-top">
+                            <span class="kcard-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg> Shipped</span>
+                          </div>
+                          <div class="kcard-title">Google OAuth & Supabase authentication</div>
+                          <div class="kcard-bottom">
+                            <div class="kcard-avatar" aria-hidden="true">O</div>
+                            <span class="kcard-assignee">@oceanmallik</span>
+                          </div>
+                        </div>
+                        <div class="kanban-card-preview">
+                          <div class="kcard-top">
+                            <span class="kcard-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg> Shipped</span>
+                          </div>
+                          <div class="kcard-title">Modular hackathon boards & countdown timer</div>
+                          <div class="kcard-bottom">
+                            <div class="kcard-avatar" aria-hidden="true">A</div>
+                            <span class="kcard-assignee">@alex_lead</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Inner Panel 3: Team Room (bg-page, 1px border, 16px radius, 20px padding) -->
+                <div class="board-canvas-chat">
+                  <div class="canvas-section-heading">
+                    <div class="section-heading-left">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                      <span>Team room</span>
+                    </div>
+                    <span class="chat-live-badge"><span class="chat-status-dot" aria-hidden="true"></span><span>Live chat</span></span>
+                  </div>
+
+                  <div class="chat-preview-feed">
+                    <!-- Teammate 1 -->
+                    <div class="chat-preview-msg msg-peer">
+                      <div class="cmsg-avatar" aria-hidden="true">A</div>
+                      <div class="cmsg-content">
+                        <div class="cmsg-meta">
+                          <span class="cmsg-name">Alex</span>
+                          <span class="cmsg-handle">@alex_lead</span>
+                          <span class="cmsg-time">2m ago</span>
+                        </div>
+                        <div class="cmsg-bubble">
+                          Pushed the latest changes to github.com/oceanmallik/Hackdeck! Task moved to In Progress.
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Teammate 2 -->
+                    <div class="chat-preview-msg msg-peer">
+                      <div class="cmsg-avatar" aria-hidden="true">M</div>
+                      <div class="cmsg-content">
+                        <div class="cmsg-meta">
+                          <span class="cmsg-name">Maya</span>
+                          <span class="cmsg-handle">@maya_ui</span>
+                          <span class="cmsg-time">1m ago</span>
+                        </div>
+                        <div class="cmsg-bubble">
+                          Live demo is deployed and running on hackdeck.devs.surf! 18h left on the clock.
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Me -->
+                    <div class="chat-preview-msg msg-me">
+                      <div class="cmsg-content">
+                        <div class="cmsg-meta">
+                          <span class="cmsg-time">Just now</span>
+                          <span class="cmsg-name">oceanmallik</span>
+                        </div>
+                        <div class="cmsg-bubble">
+                          Awesome! Polish the sprint board and technical docs in the project showcase. We're ready to ship!
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Mock Chat Input: bg-card, 1px border, 8px radius -->
+                  <div class="chat-preview-input-row">
+                    <div class="chat-mock-input" tabindex="0" role="textbox" aria-label="Type message to team">
+                      <span class="chat-mock-placeholder">Type message to team...</span>
+                      <button type="button" class="chat-mock-send-btn" aria-label="Send message">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
           </div>
 
-          <!-- Card 2 -->
-          <div class="feature-card card">
-            <div>
-              <div class="feature-header-row card-header-row">
-                <div class="card-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
-                <h3 class="feature-title card-title">Teammate Matching</h3>
-              </div>
-              <p class="feature-desc card-desc">
-                Connect builders, UI designers, and researchers with <strong>matching skill tags and handles</strong>.
-              </p>
-            </div>
-
-            <div class="card-illustration" aria-hidden="true">
-              <div class="card-concentric-squares">
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-              </div>
-              <div class="card-illustration-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
+          <!-- Feature Cards (Bottom Row) -->
+          <div class="hero-pillars-grid">
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-icon" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
                 </svg>
+                <h3 class="pillar-title">Project Drafts</h3>
               </div>
+              <p class="pillar-desc">Scratchpad for <strong>mission statements, architecture blueprints</strong>, and repo/demo links.</p>
             </div>
 
-            <ul class="card-checklist">
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>Claim unique hacker handles</span>
-              </li>
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>Live teammate search and instant invites</span>
-              </li>
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>Leader and member role management</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="feature-card card">
-            <div>
-              <div class="feature-header-row card-header-row">
-                <div class="card-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
-                </div>
-                <h3 class="feature-title card-title">Submission Deck</h3>
-              </div>
-              <p class="feature-desc card-desc">
-                Organize deliverables, repositories, video demos, and <strong>milestone task kanban</strong>.
-              </p>
-            </div>
-
-            <div class="card-illustration" aria-hidden="true">
-              <div class="card-concentric-squares">
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-                <div class="card-concentric-square"></div>
-              </div>
-              <div class="card-illustration-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="3" y1="9" x2="21" y2="9"></line>
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-icon" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                  <path d="M3 9h18"></path>
+                  <path d="M9 21V9"></path>
                 </svg>
+                <h3 class="pillar-title">Sprint Kanban</h3>
               </div>
+              <p class="pillar-desc">Visual task columns to <strong>plan who builds what</strong> during the hackathon sprint.</p>
             </div>
 
-            <ul class="card-checklist">
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>GitHub & live demo badges</span>
-              </li>
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>Interactive sprint task board</span>
-              </li>
-              <li class="card-checklist-item">
-                <span class="card-checklist-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>Markdown technical overview & docs</span>
-              </li>
-            </ul>
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-icon" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <h3 class="pillar-title">Team Room Chat</h3>
+              </div>
+              <p class="pillar-desc">Real-time private coordination with <strong>inline message editing</strong> and instant updates.</p>
+            </div>
+
+            <div class="pillar-card">
+              <div class="pillar-header">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-icon" aria-hidden="true">
+                  <line x1="10" y1="2" x2="14" y2="2"></line>
+                  <line x1="12" y1="14" x2="15" y2="11"></line>
+                  <circle cx="12" cy="14" r="8"></circle>
+                </svg>
+                <h3 class="pillar-title">Submission Timer</h3>
+              </div>
+              <p class="pillar-desc">Live countdown clock ticking down to <strong>final project submission</strong>.</p>
+            </div>
           </div>
         </div>
       </div>

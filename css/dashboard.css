@@ -55,103 +55,756 @@
   line-height: 1.6;
 }
 
+/* ==========================================================================
+   Hero CTAs & Navbar Google Sign-in Buttons
+   ========================================================================== */
 .hero-actions {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-12);
-  margin-bottom: var(--space-48);
+  gap: var(--space-12, 12px);
+  margin-bottom: var(--space-48, 48px);
   flex-wrap: wrap;
 }
 
+.btn-hero-google {
+  background-color: #ffffff;
+  color: #171717;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  font-size: var(--font-size-14, 14px);
+  font-weight: 500;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-hero-google svg {
+  color: #171717;
+  stroke: #171717;
+}
+
+.btn-hero-google:hover {
+  background-color: var(--text-body, #d4d4d4);
+  border-color: var(--text-body, #d4d4d4);
+  color: #171717;
+}
+
+.btn-hero-google:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-page, #171717), 0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+.btn-hero-explore {
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  color: var(--text-primary, #ffffff);
+  border-radius: 8px;
+  font-size: var(--font-size-14, 14px);
+  font-weight: 500;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.btn-hero-explore:hover {
+  background-color: var(--bg-elevated, #232323);
+  border-color: var(--border-hover, #3a3a3a);
+  color: var(--text-primary, #ffffff);
+}
+
+.btn-hero-explore:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-page, #171717), 0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+/* Navbar Sign in with Google */
+.navbar #btnGoogleSignIn {
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  color: var(--text-primary, #ffffff);
+  border-radius: 8px;
+  font-size: var(--font-size-14, 14px);
+  font-weight: 500;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.navbar #btnGoogleSignIn:hover {
+  background-color: var(--bg-elevated, #232323);
+  border-color: var(--border-hover, #3a3a3a);
+  color: var(--text-primary, #ffffff);
+}
+
+.navbar #btnGoogleSignIn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-page, #171717), 0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
 /* ==========================================================================
-   STEP 3: Bento Grid for Feature Previews
-   - CSS grid, 16px gap, 3 cols desktop, 2 tablet, 1 mobile
+   Visual Board Workspace Showcase (Hero Section)
    ========================================================================== */
-.hero-features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-16);
-  margin-top: var(--space-32);
-  text-align: left;
+.hero-board-showcase {
+  margin-top: var(--space-32, 32px);
   width: 100%;
+  max-width: 1080px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+/* Outer Shell: bg-card, 1px border, 16px radius, padding 0, overflow hidden, flat, no shadow */
+.hero-board-window {
+  background-color: var(--bg-card, #1c1c1c);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: none;
+  transition: border-color 150ms ease;
+}
+
+.hero-board-window:hover {
+  border-color: var(--border-hover, #3a3a3a);
+}
+
+/* Header Bar: bg-page, 1px bottom border, 12px 16px padding */
+.board-window-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: var(--bg-page, #171717);
+  border-bottom: 1px solid var(--border, #2a2a2a);
+  gap: var(--space-12, 12px);
+  flex-wrap: wrap;
+}
+
+.board-window-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12, 12px);
+  flex-wrap: wrap;
+}
+
+.board-meta-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-muted, #8f8f8f);
+}
+
+.meta-crumb-root {
+  color: var(--text-muted, #8f8f8f);
+}
+
+.meta-crumb-slash {
+  color: var(--border, #2a2a2a);
+}
+
+.meta-crumb-title {
+  color: var(--text-secondary, #a1a1a1);
+  font-weight: 500;
+}
+
+.preview-phase-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  padding: 3px 10px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-secondary, #a1a1a1);
+}
+
+.preview-phase-pill svg {
+  color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
+}
+
+/* Neutral Deadline Pill */
+.preview-timer-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  padding: 3px 10px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-secondary, #a1a1a1);
+}
+
+.preview-timer-box svg {
+  color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
+}
+
+.timer-tag {
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-muted, #8f8f8f);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.timer-clock {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-12, 12px);
+  font-weight: 500;
+  color: var(--text-primary, #ffffff);
+}
+
+/* Window Canvas: padding 20px */
+.board-window-canvas {
+  padding: 20px;
+  background-color: var(--bg-card, #1c1c1c);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Inner Panels: bg-page, 1px border, 16px radius, 20px padding */
+.board-canvas-header,
+.board-canvas-kanban,
+.board-canvas-chat {
+  background-color: var(--bg-page, #171717);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+/* Project Draft Inner Panel */
+.board-canvas-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.canvas-header-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.canvas-label-badge {
+  display: block;
+  font-size: var(--font-size-12, 12px);
+  font-weight: 400;
+  color: var(--text-muted, #8f8f8f);
+  text-transform: none;
+  letter-spacing: normal;
+  margin-bottom: 4px;
+}
+
+.canvas-project-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.canvas-header-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.canvas-badge-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: var(--font-size-12, 12px);
+  font-family: var(--font-mono);
+  color: var(--text-secondary, #a1a1a1);
+  text-decoration: none;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.canvas-badge-link:hover {
+  border-color: var(--border-hover, #3a3a3a);
+  color: var(--text-primary, #ffffff);
+}
+
+.canvas-badge-link svg {
+  color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
+}
+
+.canvas-project-pitch {
+  font-size: var(--font-size-14, 14px);
+  color: var(--text-muted, #8f8f8f);
+  line-height: 1.5;
+  font-style: normal;
+  margin: 0;
+}
+
+/* Canvas 2-Column Grid (Kanban + Chat) */
+.board-canvas-grid {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 16px;
+  align-items: stretch;
 }
 
 @media (max-width: 900px) {
-  .hero-features-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .hero-features-grid {
+  .board-canvas-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* Feature Card adheres to the core Card component */
-.feature-card {
-  position: relative;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  padding: var(--space-24);
+.board-canvas-kanban,
+.board-canvas-chat {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  transition: border-color var(--transition-fast);
-  overflow: hidden;
-  box-shadow: none;
-  min-height: 240px;
 }
 
-.feature-card:hover {
-  border-color: var(--border-hover);
-}
-
-.feature-header-row {
+.canvas-section-heading {
   display: flex;
   align-items: center;
-  gap: var(--space-12);
-  margin-bottom: var(--space-12);
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border, #2a2a2a);
 }
 
-.feature-icon-wrap {
-  width: 18px;
-  height: 18px;
-  color: var(--text-secondary);
+.section-heading-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-14, 14px);
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.section-heading-left svg {
+  color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
+}
+
+.kanban-total-badge {
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-secondary, #a1a1a1);
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: var(--radius-full, 9999px);
+  padding: 2px 8px;
+  font-weight: 400;
+}
+
+.chat-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-secondary, #a1a1a1);
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: var(--radius-full, 9999px);
+  padding: 2px 8px;
+  font-weight: 400;
+}
+
+.chat-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
+}
+
+/* Kanban Columns: transparent with a 1px solid border, 8px radius */
+.kanban-preview-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .kanban-preview-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kanban-col-preview {
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.col-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.col-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
+}
+
+.col-title {
+  font-size: var(--font-size-12, 12px);
+  font-weight: 500;
+  color: var(--text-secondary, #a1a1a1);
+}
+
+.col-count {
+  margin-left: auto;
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-muted, #8f8f8f);
+  font-family: var(--font-mono);
+}
+
+.col-preview-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Task Cards: bg-card, 1px border, 8px radius, hover border-hover at 150ms, flat, no shadow */
+.kanban-card-preview {
+  background-color: var(--bg-card, #1c1c1c);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: none;
+  transition: border-color 150ms ease;
+}
+
+.kanban-card-preview:hover {
+  border-color: var(--border-hover, #3a3a3a);
+}
+
+/* Active card: border-hover plus small "Active" text label */
+.kanban-card-preview.kcard-active {
+  border-color: var(--border-hover, #3a3a3a);
+  box-shadow: none;
+}
+
+.kcard-status-label {
+  font-size: 11px;
+  color: var(--text-secondary, #a1a1a1);
+  font-weight: 500;
+}
+
+.kcard-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* All badges neutral: 12px text, text-secondary, 1px border, fully rounded, transparent background */
+.kcard-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-secondary, #a1a1a1);
+  background-color: transparent;
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: var(--radius-full, 9999px);
+  padding: 1px 8px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.kcard-tag svg {
+  color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
+}
+
+.kcard-time {
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-muted, #8f8f8f);
+  font-family: var(--font-mono);
+}
+
+.kcard-title {
+  font-size: var(--font-size-12, 12px);
+  font-weight: 500;
+  color: var(--text-primary, #ffffff);
+  line-height: 1.4;
+}
+
+.kcard-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* Avatars: bg-elevated, 1px border, text-secondary single letter */
+.kcard-avatar,
+.cmsg-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--bg-elevated, #232323);
+  border: 1px solid var(--border, #2a2a2a);
+  color: var(--text-secondary, #a1a1a1);
+  font-size: 11px;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: var(--font-size-14);
 }
 
-.feature-icon-wrap svg {
+.kcard-assignee {
+  font-size: 11px;
+  color: var(--text-muted, #8f8f8f);
+}
+
+/* Chat Preview Feed */
+.chat-preview-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.chat-preview-msg {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.msg-me {
+  justify-content: flex-end;
+}
+
+.cmsg-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+}
+
+.msg-me .cmsg-content {
+  align-items: flex-end;
+}
+
+.cmsg-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.cmsg-name {
+  font-weight: 500;
+  color: var(--text-primary, #ffffff);
+}
+
+.cmsg-handle,
+.cmsg-time {
+  color: var(--text-muted, #8f8f8f);
+}
+
+.cmsg-bubble {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: var(--font-size-12, 12px);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/* Other users: bg-elevated with 1px border */
+.msg-peer .cmsg-bubble {
+  background-color: var(--bg-elevated, #232323);
+  border: 1px solid var(--border, #2a2a2a);
+  color: var(--text-body, #d4d4d4);
+}
+
+/* "You" bubble: bg-elevated with border-hover (no white bubble) */
+.msg-me .cmsg-bubble {
+  background-color: var(--bg-elevated, #232323);
+  border: 1px solid var(--border-hover, #3a3a3a);
+  color: var(--text-primary, #ffffff);
+}
+
+.chat-preview-input-row {
+  margin-top: auto;
+}
+
+/* Input: bg-card, 1px border, 8px radius. Focus: border-hover plus 2px ring at white 10% */
+.chat-mock-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-card, #1c1c1c);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  cursor: text;
+}
+
+.chat-mock-input:focus,
+.chat-mock-input:focus-within {
+  border-color: var(--border-hover, #3a3a3a);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.chat-mock-placeholder {
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-muted, #8f8f8f);
+  user-select: none;
+}
+
+/* Send button: white bg, black icon, 8px radius */
+.chat-mock-send-btn {
+  background-color: #ffffff;
+  color: #171717;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 150ms ease;
+}
+
+.chat-mock-send-btn:hover {
+  opacity: 0.9;
+}
+
+.chat-mock-send-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-card, #1c1c1c), 0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   FEATURE CARDS (Bottom Row)
+   - Reusable Card: bg-card, 1px border, 16px radius, padding 24px, flat,
+     hover border-hover at 150ms, flex column with justify-between
+   ========================================================================== */
+.hero-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .hero-pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-pillars-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pillar-card {
+  background-color: var(--bg-card, #1c1c1c);
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: none;
+  transition: border-color 150ms ease;
+}
+
+.pillar-card:hover {
+  border-color: var(--border-hover, #3a3a3a);
+}
+
+.pillar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pillar-icon {
   width: 18px;
   height: 18px;
-  stroke-width: 1.5;
+  color: var(--text-secondary, #a1a1a1);
+  flex-shrink: 0;
 }
 
-.feature-title {
-  font-size: var(--font-size-16);
+.pillar-title {
+  font-size: var(--font-size-16, 16px);
   font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
+  color: var(--text-primary, #ffffff);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.pillar-desc {
+  font-size: var(--font-size-14, 14px);
+  color: var(--text-muted, #8f8f8f);
+  line-height: 1.5;
   margin: 0;
 }
 
-.feature-desc {
-  font-size: var(--font-size-14);
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: var(--space-24);
-  max-width: 100%;
+.pillar-desc strong {
+  color: var(--text-primary, #ffffff);
+  font-weight: 500;
 }
 
-.feature-desc strong {
-  color: var(--text-primary);
-  font-weight: 500;
+/* ==========================================================================
+   Prefers-Reduced-Motion Support
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .hero-board-window,
+  .pillar-card,
+  .kanban-card-preview,
+  .btn-hero-google,
+  .btn-hero-explore,
+  .navbar #btnGoogleSignIn,
+  .canvas-badge-link,
+  .chat-mock-input,
+  .chat-mock-send-btn {
+    transition: none !important;
+  }
 }
 
 /* ==========================================================================

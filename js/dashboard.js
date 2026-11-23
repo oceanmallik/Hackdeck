@@ -1042,6 +1042,27 @@
     });
   }
 
+  let heroTimerInterval = null;
+
+  /**
+   * Initialize live countdown ticker for hero board showcase
+   */
+  function initHeroTimer() {
+    const el = document.getElementById('heroCountdownTimer');
+    if (!el) return;
+    if (heroTimerInterval) clearInterval(heroTimerInterval);
+    let secondsLeft = 18 * 3600 + 42 * 60 + 15;
+    heroTimerInterval = setInterval(() => {
+      if (secondsLeft > 0) {
+        secondsLeft--;
+        const h = Math.floor(secondsLeft / 3600);
+        const m = Math.floor((secondsLeft % 3600) / 60);
+        const s = secondsLeft % 60;
+        el.textContent = `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+      }
+    }, 1000);
+  }
+
   /**
    * Initialize Dashboard
    */
@@ -1084,6 +1105,9 @@
 
     // Bind all create triggers
     bindCreateModalTriggers();
+
+    // Start hero landing board countdown ticker
+    initHeroTimer();
 
     // Listen for auth state change
     window.addEventListener('hackdeck:auth-change', (e) => {
