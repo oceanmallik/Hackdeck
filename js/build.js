@@ -258,7 +258,7 @@
   // =========================================================================
 
   /**
-   * Extract 11-character video ID from various YouTube URL formats
+   * Extract video ID from various YouTube URL formats
    */
   function extractYouTubeId(url) {
     if (!url || typeof url !== 'string') return null;
@@ -274,6 +274,69 @@
     // 3. Standard and shortened URLs (watch, embed, shorts, live, youtu.be)
     const match = str.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|live\/|watch\?(?:.*&)?v=))([a-zA-Z0-9_-]{11})/i);
     return match ? match[1] : null;
+  }
+
+  /**
+   * Parse video URL into embeddable specs (YouTube, Loom, Vimeo, direct HTML5 video, or fallback)
+   */
+  function parseVideoInfo(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return null;
+    const url = rawUrl.trim();
+    if (!url) return null;
+
+    // 1. YouTube
+    const ytId = extractYouTubeId(url);
+    if (ytId) {
+      return {
+        type: 'youtube',
+        embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}?rel=0`,
+        watchUrl: url.startsWith('http') ? url : `https://www.youtube.com/watch?v=${ytId}`,
+        label: 'Watch on YouTube ↗'
+      };
+    }
+
+    // 2. Loom (loom.com/share/... or loom.com/embed/...)
+    const loomMatch = url.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/i);
+    if (loomMatch) {
+      return {
+        type: 'loom',
+        embedUrl: `https://www.loom.com/embed/${loomMatch[1]}`,
+        watchUrl: url,
+        label: 'Watch on Loom ↗'
+      };
+    }
+
+    // 3. Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/i);
+    if (vimeoMatch) {
+      return {
+        type: 'vimeo',
+        embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+        watchUrl: url,
+        label: 'Watch on Vimeo ↗'
+      };
+    }
+
+    // 4. Direct video file (.mp4, .webm, .ogg, .mov)
+    if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)) {
+      return {
+        type: 'file',
+        fileUrl: url,
+        watchUrl: url,
+        label: 'Open Video ↗'
+      };
+    }
+
+    // 5. Generic external video URL
+    if (/^https?:\/\//i.test(url)) {
+      return {
+        type: 'link',
+        watchUrl: url,
+        label: 'Open Video Link ↗'
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -384,57 +447,74 @@
       }
     }
 
-    // 2. YouTube Video(s)
+    // 2. YouTube / Demo Video(s)
     if (showcaseVideosGrid) {
       const videos = safeJsonArray(hackathon.youtube_urls);
       if (videos.length === 0) {
         showcaseVideosGrid.innerHTML = `
           <div class="showcase-empty-card" style="grid-column: 1 / -1;">
-            No demo videos linked yet. ${isLeader ? 'Click "Edit Project Details" above to embed a YouTube walkthrough.' : ''}
+            No demo video linked yet. ${isLeader ? 'Click "Edit Project Details" above to embed your demo walkthrough.' : ''}
           </div>
         `;
       } else {
         const videoCards = videos.map((item, index) => {
           const url = typeof item === 'string' ? item : (item.url || '');
           const title = typeof item === 'object' && item.title ? item.title : `Demo Video #${index + 1}`;
-          const videoId = extractYouTubeId(url);
+          const videoInfo = parseVideoInfo(url);
+          if (!videoInfo) return '';
 
-          if (videoId) {
+          if (videoInfo.embedUrl) {
             return `
               <div class="showcase-video-card">
                 <div class="video-responsive-wrap">
                   <iframe 
-                    src="https://www.youtube.com/embed/${videoId}" 
+                    src="${videoInfo.embedUrl}" 
                     title="${escapeHtml(title)}" 
                     loading="lazy" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    referrerpolicy="strict-origin-when-cross-origin"
+                    referrerpolicy="strict-origin-when-cross-origin" 
                     allowfullscreen
                   ></iframe>
                 </div>
                 <div class="showcase-video-meta">
                   <span class="showcase-video-title" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
-                  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="showcase-video-link">
-                    Watch on YouTube ↗
+                  <a href="${escapeHtml(videoInfo.watchUrl)}" target="_blank" rel="noopener noreferrer" class="showcase-video-link">
+                    ${escapeHtml(videoInfo.label)}
                   </a>
                 </div>
               </div>
             `;
-          } else if (url) {
+          } else if (videoInfo.type === 'file') {
             return `
               <div class="showcase-video-card">
-                <div style="padding: 24px 16px; text-align: center; background-color: var(--bg-card);">
-                  <div style="font-size: 1.5rem; margin-bottom: 6px;">🎬</div>
+                <div class="video-responsive-wrap">
+                  <video controls preload="metadata" class="showcase-native-video">
+                    <source src="${escapeHtml(videoInfo.fileUrl)}">
+                    Your browser does not support HTML5 video.
+                  </video>
+                </div>
+                <div class="showcase-video-meta">
+                  <span class="showcase-video-title" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+                  <a href="${escapeHtml(videoInfo.watchUrl)}" target="_blank" rel="noopener noreferrer" class="showcase-video-link">
+                    ${escapeHtml(videoInfo.label)}
+                  </a>
+                </div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="showcase-video-card showcase-video-fallback">
+                <div class="showcase-video-fallback-body">
+                  <div class="showcase-video-fallback-icon">🎬</div>
                   <div class="showcase-video-title">${escapeHtml(title)}</div>
-                  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="showcase-video-link" style="margin-top: 6px; display: inline-block;">
-                    Open Video Link ↗
+                  <a href="${escapeHtml(videoInfo.watchUrl)}" target="_blank" rel="noopener noreferrer" class="showcase-video-link">
+                    ${escapeHtml(videoInfo.label)}
                   </a>
                 </div>
               </div>
             `;
           }
-          return '';
         }).filter(Boolean);
 
         showcaseVideosGrid.innerHTML = videoCards.length > 0 
@@ -458,12 +538,14 @@
           const label = typeof res === 'object' && res.label ? res.label : (url.replace(/^https?:\/\//, '') || 'Resource Link');
           return `
             <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="showcase-resource-pill">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-              </svg>
-              <span>${escapeHtml(label)}</span>
-              <span style="font-size: 0.78rem; opacity: 0.65;">↗</span>
+              <div class="showcase-resource-pill-left">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                <span class="showcase-resource-label">${escapeHtml(label)}</span>
+              </div>
+              <span class="showcase-resource-arrow">↗</span>
             </a>
           `;
         }).join('');
