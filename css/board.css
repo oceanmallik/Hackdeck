@@ -1979,6 +1979,73 @@ body.spectator-mode .kanban-card {
   margin: 12px 0;
 }
 
+/* ==========================================================================
+   Project Showcase — Inline Edit Panel (like the "Edit Links" bar pattern)
+   ========================================================================== */
+.showcase-inline-edit-panel {
+  margin-top: var(--space-20);
+  padding: var(--space-20);
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.showcase-inline-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding-bottom: var(--space-12);
+  border-bottom: 1px solid var(--border);
+}
+
+.showcase-inline-edit-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: var(--font-size-13);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.showcase-inline-edit-title-wrap svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.btn-close-inline {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.btn-close-inline:hover {
+  color: var(--text-primary);
+  border-color: var(--border);
+  background-color: var(--bg-card);
+}
+
+.showcase-inline-edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-8);
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--border);
+}
+
 /* Markdown Tab Toggle (Write vs Preview) */
 .markdown-tabs-header {
   display: flex;

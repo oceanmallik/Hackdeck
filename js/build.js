@@ -79,8 +79,8 @@
   const showcaseResourcesList = document.getElementById('showcaseResourcesList');
   const showcaseMarkdownBody = document.getElementById('showcaseMarkdownBody');
 
-  // DOM Elements - Edit Project Details Modal
-  const editProjectShowcaseModal = document.getElementById('editProjectShowcaseModal');
+  // DOM Elements - Edit Project Showcase Inline Panel
+  const showcaseEditPanel = document.getElementById('showcaseEditPanel');
   const btnCloseEditShowcaseModal = document.getElementById('btnCloseEditShowcaseModal');
   const btnCancelEditShowcase = document.getElementById('btnCancelEditShowcase');
   const editShowcaseForm = document.getElementById('editShowcaseForm');
@@ -568,10 +568,16 @@
   }
 
   /**
-   * Open Edit Showcase Details Modal
+   * Open / Toggle inline showcase edit panel (like the "Edit Links" bar pattern)
    */
   function openEditShowcaseModal() {
-    if (!isLeader || !editProjectShowcaseModal) return;
+    if (!isLeader || !showcaseEditPanel) return;
+
+    const isCurrentlyHidden = showcaseEditPanel.classList.contains('hidden');
+    if (!isCurrentlyHidden) {
+      closeEditShowcaseModal();
+      return;
+    }
 
     if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
 
@@ -612,15 +618,18 @@
       }
     }
 
-    editProjectShowcaseModal.classList.remove('hidden');
+    showcaseEditPanel.classList.remove('hidden');
+    // Scroll panel into view smoothly
+    showcaseEditPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (inputShowcaseRepoUrl) inputShowcaseRepoUrl.focus();
   }
 
   /**
-   * Close Edit Showcase Details Modal
+   * Close inline showcase edit panel
    */
   function closeEditShowcaseModal() {
-    if (!editProjectShowcaseModal) return;
-    editProjectShowcaseModal.classList.add('hidden');
+    if (!showcaseEditPanel) return;
+    showcaseEditPanel.classList.add('hidden');
     if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
     if (btnSaveShowcaseDetails) {
       btnSaveShowcaseDetails.disabled = false;
@@ -1519,11 +1528,6 @@
     if (btnAddResourceRow) {
       btnAddResourceRow.addEventListener('click', () => addResourceRow('', ''));
     }
-    if (editProjectShowcaseModal) {
-      editProjectShowcaseModal.addEventListener('click', (e) => {
-        if (e.target === editProjectShowcaseModal) closeEditShowcaseModal();
-      });
-    }
 
     // Task Creation Buttons
     if (btnAddTask) {
@@ -1609,7 +1613,7 @@
         if (createTaskModal && !createTaskModal.classList.contains('hidden')) {
           closeCreateTaskModal();
         }
-        if (editProjectShowcaseModal && !editProjectShowcaseModal.classList.contains('hidden')) {
+        if (showcaseEditPanel && !showcaseEditPanel.classList.contains('hidden')) {
           closeEditShowcaseModal();
         }
       }
