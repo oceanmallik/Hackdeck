@@ -2360,6 +2360,130 @@ body.spectator-mode .kanban-card {
   font-weight: 500;
 }
 
+/* Chat Bubble Row & Actions */
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  position: relative;
+  max-width: 100%;
+}
+
+.chat-bubble-row-me {
+  justify-content: flex-end;
+}
+
+.chat-bubble-row-peer {
+  justify-content: flex-start;
+}
+
+.chat-msg-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.chat-msg-row:hover .chat-msg-actions,
+.chat-msg-row:focus-within .chat-msg-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .chat-msg-actions {
+    opacity: 0.7;
+  }
+}
+
+.btn-chat-action {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.btn-chat-action:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover, var(--text-muted));
+  background-color: var(--bg-elevated);
+}
+
+.btn-chat-delete:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+  background-color: rgba(239, 68, 68, 0.08);
+}
+
+/* Chat Inline Edit Box */
+.chat-msg-wrapper.is-editing {
+  width: 100%;
+  max-width: 100%;
+}
+
+.chat-edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+
+.chat-edit-textarea {
+  width: 100%;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 54px;
+  box-sizing: border-box;
+}
+
+.chat-edit-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.chat-edit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chat-edit-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.chat-edit-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .chat-empty-state {
   margin: auto;
   text-align: center;

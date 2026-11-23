@@ -55,6 +55,17 @@
   }
 
   /**
+   * Show toast / notification
+   */
+  function notify(message, type = 'info') {
+    if (typeof window.showToast === 'function') {
+      window.showToast(message, type);
+    } else if (window.HackdeckToast && typeof window.HackdeckToast.show === 'function') {
+      window.HackdeckToast.show(message, type);
+    }
+  }
+
+  /**
    * Format message timestamp (e.g., "10:45 AM" or "Nov 22, 10:45 AM")
    */
   function formatChatTime(isoString) {
@@ -139,10 +150,175 @@
   }
 
   /**
+   * Inline message editing
+   */
+  function startEditingMessage(msg, row, wrapper, bubble, bubbleRow) {
+    if (!wrapper || !bubbleRow) return;
+
+    // Close any other active inline edit boxes in the chat
+    if (teamChatMessages) {
+      const activeEditBoxes = teamChatMessages.querySelectorAll('.chat-edit-box');
+      activeEditBoxes.forEach(box => {
+        const parentRow = box.closest('.chat-msg-row');
+        if (parentRow) {
+          const bRow = parentRow.querySelector('.chat-bubble-row');
+          if (bRow) bRow.classList.remove('hidden');
+          const pWrap = parentRow.querySelector('.chat-msg-wrapper');
+          if (pWrap) pWrap.classList.remove('is-editing');
+        }
+        box.remove();
+      });
+    }
+
+    bubbleRow.classList.add('hidden');
+    wrapper.classList.add('is-editing');
+
+    const editBox = document.createElement('div');
+    editBox.className = 'chat-edit-box';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'chat-edit-textarea';
+    textarea.rows = 2;
+    textarea.maxLength = 1000;
+    textarea.value = msg.content;
+
+    const footer = document.createElement('div');
+    footer.className = 'chat-edit-footer';
+
+    const hint = document.createElement('span');
+    hint.className = 'chat-edit-hint';
+    hint.textContent = 'Enter to save • Esc to cancel';
+
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'chat-edit-buttons';
+
+    const btnCancel = document.createElement('button');
+    btnCancel.type = 'button';
+    btnCancel.className = 'btn btn-secondary btn-xs btn-chat-cancel-edit';
+    btnCancel.textContent = 'Cancel';
+
+    const btnSave = document.createElement('button');
+    btnSave.type = 'button';
+    btnSave.className = 'btn btn-primary btn-xs btn-chat-save-edit';
+    btnSave.textContent = 'Save';
+
+    btnGroup.appendChild(btnCancel);
+    btnGroup.appendChild(btnSave);
+
+    footer.appendChild(hint);
+    footer.appendChild(btnGroup);
+
+    editBox.appendChild(textarea);
+    editBox.appendChild(footer);
+
+    wrapper.appendChild(editBox);
+
+    function cancelEdit() {
+      editBox.remove();
+      wrapper.classList.remove('is-editing');
+      bubbleRow.classList.remove('hidden');
+    }
+
+    async function saveEdit() {
+      const newContent = textarea.value.trim();
+      if (!newContent) {
+        notify('Message cannot be empty. Delete it instead if you want to remove it.', 'warning');
+        return;
+      }
+
+      if (newContent === msg.content) {
+        cancelEdit();
+        return;
+      }
+
+      btnSave.disabled = true;
+      btnCancel.disabled = true;
+      btnSave.textContent = 'Saving...';
+
+      try {
+        const { error } = await window.supabaseClient
+          .from('messages')
+          .update({ content: newContent })
+          .eq('id', msg.id);
+
+        if (error) throw error;
+
+        msg.content = newContent;
+        bubble.textContent = newContent;
+
+        cancelEdit();
+        notify('Message updated.', 'info');
+      } catch (err) {
+        console.error('Error updating message:', err);
+        btnSave.disabled = false;
+        btnCancel.disabled = false;
+        btnSave.textContent = 'Save';
+        notify('Failed to update message: ' + (err.message || 'Network error'), 'error');
+      }
+    }
+
+    btnCancel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cancelEdit();
+    });
+
+    btnSave.addEventListener('click', (e) => {
+      e.stopPropagation();
+      saveEdit();
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelEdit();
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        saveEdit();
+      }
+    });
+
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  }
+
+  /**
+   * Delete message
+   */
+  async function deleteMessage(msgId, rowEl) {
+    if (!window.supabaseClient || !hackathonId) return;
+
+    const confirmed = window.confirm('Are you sure you want to delete this message?');
+    if (!confirmed) return;
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('messages')
+        .delete()
+        .eq('id', msgId);
+
+      if (error) throw error;
+
+      if (rowEl) {
+        rowEl.remove();
+        if (teamChatMessages && !teamChatMessages.querySelector('.chat-msg-row')) {
+          renderEmptyState();
+        }
+      }
+
+      notify('Message deleted.', 'info');
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      notify('Failed to delete message: ' + (err.message || 'Network error'), 'error');
+    }
+  }
+
+  /**
    * Build message DOM element
    */
   function createMessageElement(msg, profile) {
     const isMe = currentUser && msg.user_id === currentUser.id;
+    const canEdit = isMe && !isSpectator && isMember;
+    const canDelete = (isMe || isLeader) && !isSpectator && isMember;
     const p = profile || {};
     const username = p.username || (isMe ? (currentProfile?.username || 'me') : 'teammate');
     const displayName = p.display_name || username;
@@ -154,6 +330,8 @@
     const row = document.createElement('div');
     row.id = `chat-msg-${msg.id}`;
     row.className = `chat-msg-row ${isMe ? 'chat-msg-row-me' : 'chat-msg-row-peer'}`;
+    row.dataset.msgId = msg.id;
+    row.dataset.userId = msg.user_id;
 
     if (!isMe) {
       // Peer avatar
@@ -204,12 +382,70 @@
 
     wrapper.appendChild(meta);
 
+    // Bubble + actions row
+    const bubbleRow = document.createElement('div');
+    bubbleRow.className = `chat-bubble-row ${isMe ? 'chat-bubble-row-me' : 'chat-bubble-row-peer'}`;
+
     // Message bubble
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${isMe ? 'chat-bubble-me' : 'chat-bubble-peer'}`;
     bubble.textContent = msg.content; // textContent handles escaping automatically
-    wrapper.appendChild(bubble);
 
+    // Action buttons (Edit & Delete)
+    if (canEdit || canDelete) {
+      const actions = document.createElement('div');
+      actions.className = 'chat-msg-actions';
+
+      if (canEdit) {
+        const btnEdit = document.createElement('button');
+        btnEdit.type = 'button';
+        btnEdit.className = 'btn-chat-action btn-chat-edit';
+        btnEdit.title = 'Edit message';
+        btnEdit.setAttribute('aria-label', 'Edit message');
+        btnEdit.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        `;
+        btnEdit.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startEditingMessage(msg, row, wrapper, bubble, bubbleRow);
+        });
+        actions.appendChild(btnEdit);
+      }
+
+      if (canDelete) {
+        const btnDelete = document.createElement('button');
+        btnDelete.type = 'button';
+        btnDelete.className = 'btn-chat-action btn-chat-delete';
+        btnDelete.title = 'Delete message';
+        btnDelete.setAttribute('aria-label', 'Delete message');
+        btnDelete.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        `;
+        btnDelete.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteMessage(msg.id, row);
+        });
+        actions.appendChild(btnDelete);
+      }
+
+      if (isMe) {
+        bubbleRow.appendChild(actions);
+        bubbleRow.appendChild(bubble);
+      } else {
+        bubbleRow.appendChild(bubble);
+        bubbleRow.appendChild(actions);
+      }
+    } else {
+      bubbleRow.appendChild(bubble);
+    }
+
+    wrapper.appendChild(bubbleRow);
     row.appendChild(wrapper);
     return row;
   }
@@ -430,6 +666,41 @@
           showUnreadDot();
         }
       })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'messages',
+        filter: `hackathon_id=eq.${hackathonId}`
+      }, (payload) => {
+        const updated = payload.new;
+        if (!updated) return;
+        const row = document.getElementById(`chat-msg-${updated.id}`);
+        if (!row) return;
+
+        // Update bubble text if not currently actively editing in this client
+        const editBox = row.querySelector('.chat-edit-box');
+        if (!editBox) {
+          const bubble = row.querySelector('.chat-bubble');
+          if (bubble) {
+            bubble.textContent = updated.content;
+          }
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'messages'
+      }, (payload) => {
+        const deletedId = payload.old?.id;
+        if (!deletedId) return;
+        const row = document.getElementById(`chat-msg-${deletedId}`);
+        if (row) {
+          row.remove();
+          if (teamChatMessages && !teamChatMessages.querySelector('.chat-msg-row')) {
+            renderEmptyState();
+          }
+        }
+      })
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
           // Realtime connected
@@ -460,9 +731,7 @@
     if (e) e.preventDefault();
 
     if (!isMember || isSpectator) {
-      if (window.HackdeckToast) {
-        window.HackdeckToast.show('Only active team members can participate in team chat.', 'warning');
-      }
+      notify('Only active team members can participate in team chat.', 'warning');
       return;
     }
 
@@ -509,11 +778,7 @@
 
     } catch (err) {
       console.error('Error inserting message:', err);
-      if (window.HackdeckToast) {
-        window.HackdeckToast.show('Failed to send message: ' + (err.message || 'Network error'), 'error');
-      } else {
-        alert('Failed to send message. Please try again.');
-      }
+      notify('Failed to send message: ' + (err.message || 'Network error'), 'error');
     } finally {
       isSending = false;
       if (btnSendChatMessage) {
