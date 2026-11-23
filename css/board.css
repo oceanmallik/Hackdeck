@@ -1980,70 +1980,64 @@ body.spectator-mode .kanban-card {
 }
 
 /* ==========================================================================
-   Project Showcase — Inline Edit Panel (like the "Edit Links" bar pattern)
+   Project Showcase — Inline Card Edit Bars (Each card has its own edit box)
    ========================================================================== */
-.showcase-inline-edit-panel {
-  margin-top: var(--space-20);
-  padding: var(--space-20);
-  background-color: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-}
-
-.showcase-inline-edit-header {
+.showcase-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-12);
-  padding-bottom: var(--space-12);
-  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-12);
 }
 
-.showcase-inline-edit-title-wrap {
+.showcase-card-header .showcase-section-title {
+  margin-bottom: 0;
+}
+
+.showcase-card-edit-bar {
+  margin-top: var(--space-12);
+  padding: var(--space-14) var(--space-16);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  transition: all var(--transition-fast);
+}
+
+.showcase-card-edit-bar.hidden {
+  display: none !important;
+}
+
+.dynamic-item-row {
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  font-size: var(--font-size-13);
-  font-weight: 600;
-  color: var(--text-secondary);
+  width: 100%;
 }
 
-.showcase-inline-edit-title-wrap svg {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.btn-close-inline {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sm);
+.btn-remove-dynamic-row {
+  width: 28px;
+  height: 28px;
   background: transparent;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
   flex-shrink: 0;
   transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
-.btn-close-inline:hover {
-  color: var(--text-primary);
-  border-color: var(--border);
-  background-color: var(--bg-card);
-}
-
-.showcase-inline-edit-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-8);
-  padding-top: var(--space-12);
-  border-top: 1px solid var(--border);
+.btn-remove-dynamic-row:hover {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background-color: rgba(239, 68, 68, 0.08);
 }
 
 /* Markdown Tab Toggle (Write vs Preview) */

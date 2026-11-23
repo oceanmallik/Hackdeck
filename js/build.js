@@ -79,26 +79,42 @@
   const showcaseResourcesList = document.getElementById('showcaseResourcesList');
   const showcaseMarkdownBody = document.getElementById('showcaseMarkdownBody');
 
-  // DOM Elements - Edit Project Showcase Inline Panel
-  const showcaseEditPanel = document.getElementById('showcaseEditPanel');
-  const btnCloseEditShowcaseModal = document.getElementById('btnCloseEditShowcaseModal');
-  const btnCancelEditShowcase = document.getElementById('btnCancelEditShowcase');
-  const editShowcaseForm = document.getElementById('editShowcaseForm');
-  const btnSaveShowcaseDetails = document.getElementById('btnSaveShowcaseDetails');
+  // DOM Elements - Showcase Per-Card Inline Edit Bars
+  // 1. Deliverables (Quick Links)
+  const btnEditDeliverables = document.getElementById('btnEditDeliverables');
+  const editDeliverablesBar = document.getElementById('editDeliverablesBar');
   const inputShowcaseRepoUrl = document.getElementById('inputShowcaseRepoUrl');
   const inputShowcaseDemoUrl = document.getElementById('inputShowcaseDemoUrl');
-  const inputShowcaseDescMd = document.getElementById('inputShowcaseDescMd');
+  const btnSaveDeliverables = document.getElementById('btnSaveDeliverables');
+  const btnCancelDeliverables = document.getElementById('btnCancelDeliverables');
+
+  // 2. Demo Videos
+  const btnEditVideos = document.getElementById('btnEditVideos');
+  const editVideosBar = document.getElementById('editVideosBar');
+  const btnAddYouTubeRow = document.getElementById('btnAddYouTubeRow');
+  const editYouTubeRowsContainer = document.getElementById('editYouTubeRowsContainer');
+  const btnSaveVideos = document.getElementById('btnSaveVideos');
+  const btnCancelVideos = document.getElementById('btnCancelVideos');
+
+  // 3. Project Resources
+  const btnEditResources = document.getElementById('btnEditResources');
+  const editResourcesBar = document.getElementById('editResourcesBar');
+  const btnAddResourceRow = document.getElementById('btnAddResourceRow');
+  const editResourceRowsContainer = document.getElementById('editResourceRowsContainer');
+  const btnSaveResources = document.getElementById('btnSaveResources');
+  const btnCancelResources = document.getElementById('btnCancelResources');
+
+  // 4. Documentation & Overview
+  const btnEditDocs = document.getElementById('btnEditDocs');
+  const editDocsBar = document.getElementById('editDocsBar');
   const tabWriteMd = document.getElementById('tabWriteMd');
   const tabPreviewMd = document.getElementById('tabPreviewMd');
   const tabWriteContainer = document.getElementById('tabWriteContainer');
   const tabPreviewContainer = document.getElementById('tabPreviewContainer');
   const previewMarkdownOutput = document.getElementById('previewMarkdownOutput');
-  const btnAddYouTubeRow = document.getElementById('btnAddYouTubeRow');
-  const editYouTubeRowsContainer = document.getElementById('editYouTubeRowsContainer');
-  const btnAddResourceRow = document.getElementById('btnAddResourceRow');
-  const editResourceRowsContainer = document.getElementById('editResourceRowsContainer');
-  const editShowcaseErrorBanner = document.getElementById('editShowcaseErrorBanner');
-  const editShowcaseErrorMessage = document.getElementById('editShowcaseErrorMessage');
+  const inputShowcaseDescMd = document.getElementById('inputShowcaseDescMd');
+  const btnSaveDocs = document.getElementById('btnSaveDocs');
+  const btnCancelDocs = document.getElementById('btnCancelDocs');
 
   /**
    * Safe HTML Escaper
@@ -406,13 +422,23 @@
   function renderProjectShowcase(hackathon) {
     if (!hackathon) return;
 
-    // Leader editing button
-    if (btnEditProjectShowcase) {
-      if (isLeader) {
-        btnEditProjectShowcase.classList.remove('hidden');
-      } else {
-        btnEditProjectShowcase.classList.add('hidden');
+    // Per-card leader editing buttons
+    const leaderCardBtns = [btnEditDeliverables, btnEditVideos, btnEditResources, btnEditDocs];
+    leaderCardBtns.forEach(btn => {
+      if (btn) {
+        if (isLeader && !isSpectator) {
+          btn.classList.remove('hidden');
+        } else {
+          btn.classList.add('hidden');
+        }
       }
+    });
+
+    if (!isLeader || isSpectator) {
+      if (editDeliverablesBar) editDeliverablesBar.classList.add('hidden');
+      if (editVideosBar) editVideosBar.classList.add('hidden');
+      if (editResourcesBar) editResourcesBar.classList.add('hidden');
+      if (editDocsBar) editDocsBar.classList.add('hidden');
     }
 
     // Title
@@ -453,7 +479,7 @@
       if (videos.length === 0) {
         showcaseVideosGrid.innerHTML = `
           <div class="showcase-empty-card" style="grid-column: 1 / -1;">
-            No demo video linked yet. ${isLeader ? 'Click "Edit Project Details" above to embed your demo walkthrough.' : ''}
+            No demo video linked yet. ${isLeader ? 'Click "Edit Videos" above to embed your demo walkthrough.' : ''}
           </div>
         `;
       } else {
@@ -529,7 +555,7 @@
       if (resources.length === 0) {
         showcaseResourcesList.innerHTML = `
           <div class="showcase-empty-card" style="width: 100%;">
-            No additional deliverables or links added. ${isLeader ? 'Click "Edit Project Details" to link Figma, slides, or documentation.' : ''}
+            No additional deliverables or links added. ${isLeader ? 'Click "Edit Resources" above to link Figma, slides, or documentation.' : ''}
           </div>
         `;
       } else {
@@ -560,80 +586,276 @@
       } else {
         showcaseMarkdownBody.innerHTML = `
           <div class="showcase-empty-card">
-            No documentation written yet. ${isLeader ? 'Click "Edit Project Details" above to add your architecture notes, setup instructions, and project summary.' : ''}
+            No documentation written yet. ${isLeader ? 'Click "Edit Docs" above to add your architecture notes, setup instructions, and project summary.' : ''}
           </div>
         `;
       }
     }
   }
 
-  /**
-   * Open / Toggle inline showcase edit panel (like the "Edit Links" bar pattern)
-   */
-  function openEditShowcaseModal() {
-    if (!isLeader || !showcaseEditPanel) return;
+  // =========================================================================
+  // Per-Card Toggle & Save Handlers
+  // =========================================================================
 
-    const isCurrentlyHidden = showcaseEditPanel.classList.contains('hidden');
-    if (!isCurrentlyHidden) {
-      closeEditShowcaseModal();
-      return;
+  // 1. Deliverables (Repo & Demo URLs)
+  function toggleEditDeliverables() {
+    if (!isLeader || !editDeliverablesBar) return;
+    const isHidden = editDeliverablesBar.classList.contains('hidden');
+    if (isHidden) {
+      if (inputShowcaseRepoUrl) inputShowcaseRepoUrl.value = currentHackathon?.repo_url || '';
+      if (inputShowcaseDemoUrl) inputShowcaseDemoUrl.value = currentHackathon?.demo_url || '';
+      editDeliverablesBar.classList.remove('hidden');
+      if (inputShowcaseRepoUrl) inputShowcaseRepoUrl.focus();
+    } else {
+      editDeliverablesBar.classList.add('hidden');
     }
-
-    if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
-
-    if (inputShowcaseRepoUrl) inputShowcaseRepoUrl.value = currentHackathon?.repo_url || '';
-    if (inputShowcaseDemoUrl) inputShowcaseDemoUrl.value = currentHackathon?.demo_url || '';
-    if (inputShowcaseDescMd) inputShowcaseDescMd.value = currentHackathon?.project_description_md || '';
-
-    // Switch to Write tab
-    switchMarkdownTab('write');
-
-    // Populate dynamic YouTube rows
-    if (editYouTubeRowsContainer) {
-      editYouTubeRowsContainer.innerHTML = '';
-      const videos = safeJsonArray(currentHackathon?.youtube_urls);
-      if (videos.length === 0) {
-        addYouTubeRow('', '');
-      } else {
-        videos.forEach(v => {
-          const url = typeof v === 'string' ? v : (v.url || '');
-          const title = typeof v === 'object' ? (v.title || '') : '';
-          addYouTubeRow(url, title);
-        });
-      }
-    }
-
-    // Populate dynamic Resource rows
-    if (editResourceRowsContainer) {
-      editResourceRowsContainer.innerHTML = '';
-      const resources = safeJsonArray(currentHackathon?.resource_links);
-      if (resources.length === 0) {
-        addResourceRow('', '');
-      } else {
-        resources.forEach(r => {
-          const url = typeof r === 'string' ? r : (r.url || '');
-          const label = typeof r === 'object' ? (r.label || '') : '';
-          addResourceRow(label, url);
-        });
-      }
-    }
-
-    showcaseEditPanel.classList.remove('hidden');
-    // Scroll panel into view smoothly
-    showcaseEditPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    if (inputShowcaseRepoUrl) inputShowcaseRepoUrl.focus();
   }
 
-  /**
-   * Close inline showcase edit panel
-   */
-  function closeEditShowcaseModal() {
-    if (!showcaseEditPanel) return;
-    showcaseEditPanel.classList.add('hidden');
-    if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
-    if (btnSaveShowcaseDetails) {
-      btnSaveShowcaseDetails.disabled = false;
-      btnSaveShowcaseDetails.innerHTML = '<span>Save Changes</span>';
+  async function saveDeliverablesUrls() {
+    if (!window.supabaseClient || !isLeader || !hackathonId) return;
+    const repoUrl = (inputShowcaseRepoUrl?.value || '').trim() || null;
+    const demoUrl = (inputShowcaseDemoUrl?.value || '').trim() || null;
+
+    if (btnSaveDeliverables) {
+      btnSaveDeliverables.disabled = true;
+      btnSaveDeliverables.textContent = 'Saving...';
+    }
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('hackathons')
+        .update({ repo_url: repoUrl, demo_url: demoUrl })
+        .eq('id', hackathonId);
+
+      if (error) throw error;
+
+      if (currentHackathon) {
+        currentHackathon.repo_url = repoUrl;
+        currentHackathon.demo_url = demoUrl;
+      }
+
+      if (editDeliverablesBar) editDeliverablesBar.classList.add('hidden');
+      renderProjectDetails(currentHackathon);
+      renderProjectShowcase(currentHackathon);
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('Deliverables links saved!', 'success');
+      }
+    } catch (err) {
+      console.error('Error saving deliverables links:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to save links', 'error');
+      }
+    } finally {
+      if (btnSaveDeliverables) {
+        btnSaveDeliverables.disabled = false;
+        btnSaveDeliverables.textContent = 'Save Links';
+      }
+    }
+  }
+
+  // 2. Demo Videos
+  function toggleEditVideos() {
+    if (!isLeader || !editVideosBar) return;
+    const isHidden = editVideosBar.classList.contains('hidden');
+    if (isHidden) {
+      if (editYouTubeRowsContainer) {
+        editYouTubeRowsContainer.innerHTML = '';
+        const videos = safeJsonArray(currentHackathon?.youtube_urls);
+        if (videos.length === 0) {
+          addYouTubeRow('', '');
+        } else {
+          videos.forEach(v => {
+            const url = typeof v === 'string' ? v : (v.url || '');
+            const title = typeof v === 'object' ? (v.title || '') : '';
+            addYouTubeRow(url, title);
+          });
+        }
+      }
+      editVideosBar.classList.remove('hidden');
+    } else {
+      editVideosBar.classList.add('hidden');
+    }
+  }
+
+  async function saveVideos() {
+    if (!window.supabaseClient || !isLeader || !hackathonId) return;
+
+    const youtubeItems = [];
+    if (editYouTubeRowsContainer) {
+      const rows = editYouTubeRowsContainer.querySelectorAll('.youtube-item-row');
+      rows.forEach(r => {
+        const u = (r.querySelector('.input-yt-url')?.value || '').trim();
+        const t = (r.querySelector('.input-yt-title')?.value || '').trim();
+        if (u) {
+          youtubeItems.push({ title: t, url: u });
+        }
+      });
+    }
+
+    if (btnSaveVideos) {
+      btnSaveVideos.disabled = true;
+      btnSaveVideos.textContent = 'Saving...';
+    }
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('hackathons')
+        .update({ youtube_urls: youtubeItems })
+        .eq('id', hackathonId);
+
+      if (error) throw error;
+
+      if (currentHackathon) {
+        currentHackathon.youtube_urls = youtubeItems;
+      }
+
+      if (editVideosBar) editVideosBar.classList.add('hidden');
+      renderProjectShowcase(currentHackathon);
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('Demo videos saved!', 'success');
+      }
+    } catch (err) {
+      console.error('Error saving videos:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to save videos', 'error');
+      }
+    } finally {
+      if (btnSaveVideos) {
+        btnSaveVideos.disabled = false;
+        btnSaveVideos.textContent = 'Save Videos';
+      }
+    }
+  }
+
+  // 3. Project Resources
+  function toggleEditResources() {
+    if (!isLeader || !editResourcesBar) return;
+    const isHidden = editResourcesBar.classList.contains('hidden');
+    if (isHidden) {
+      if (editResourceRowsContainer) {
+        editResourceRowsContainer.innerHTML = '';
+        const resources = safeJsonArray(currentHackathon?.resource_links);
+        if (resources.length === 0) {
+          addResourceRow('', '');
+        } else {
+          resources.forEach(r => {
+            const url = typeof r === 'string' ? r : (r.url || '');
+            const label = typeof r === 'object' ? (r.label || '') : '';
+            addResourceRow(label, url);
+          });
+        }
+      }
+      editResourcesBar.classList.remove('hidden');
+    } else {
+      editResourcesBar.classList.add('hidden');
+    }
+  }
+
+  async function saveResources() {
+    if (!window.supabaseClient || !isLeader || !hackathonId) return;
+
+    const resourceItems = [];
+    if (editResourceRowsContainer) {
+      const rows = editResourceRowsContainer.querySelectorAll('.resource-item-row');
+      rows.forEach(r => {
+        const u = (r.querySelector('.input-res-url')?.value || '').trim();
+        const l = (r.querySelector('.input-res-label')?.value || '').trim();
+        if (u) {
+          resourceItems.push({ label: l || 'Resource', url: u });
+        }
+      });
+    }
+
+    if (btnSaveResources) {
+      btnSaveResources.disabled = true;
+      btnSaveResources.textContent = 'Saving...';
+    }
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('hackathons')
+        .update({ resource_links: resourceItems })
+        .eq('id', hackathonId);
+
+      if (error) throw error;
+
+      if (currentHackathon) {
+        currentHackathon.resource_links = resourceItems;
+      }
+
+      if (editResourcesBar) editResourcesBar.classList.add('hidden');
+      renderProjectShowcase(currentHackathon);
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('Project resources saved!', 'success');
+      }
+    } catch (err) {
+      console.error('Error saving resources:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to save resources', 'error');
+      }
+    } finally {
+      if (btnSaveResources) {
+        btnSaveResources.disabled = false;
+        btnSaveResources.textContent = 'Save Resources';
+      }
+    }
+  }
+
+  // 4. Documentation & Overview
+  function toggleEditDocs() {
+    if (!isLeader || !editDocsBar) return;
+    const isHidden = editDocsBar.classList.contains('hidden');
+    if (isHidden) {
+      if (inputShowcaseDescMd) inputShowcaseDescMd.value = currentHackathon?.project_description_md || '';
+      switchMarkdownTab('write');
+      editDocsBar.classList.remove('hidden');
+      if (inputShowcaseDescMd) inputShowcaseDescMd.focus();
+    } else {
+      editDocsBar.classList.add('hidden');
+    }
+  }
+
+  async function saveDocs() {
+    if (!window.supabaseClient || !isLeader || !hackathonId) return;
+
+    const descMd = (inputShowcaseDescMd?.value || '').trim() || null;
+
+    if (btnSaveDocs) {
+      btnSaveDocs.disabled = true;
+      btnSaveDocs.textContent = 'Saving...';
+    }
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('hackathons')
+        .update({ project_description_md: descMd })
+        .eq('id', hackathonId);
+
+      if (error) throw error;
+
+      if (currentHackathon) {
+        currentHackathon.project_description_md = descMd;
+      }
+
+      if (editDocsBar) editDocsBar.classList.add('hidden');
+      renderProjectShowcase(currentHackathon);
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('Documentation saved!', 'success');
+      }
+    } catch (err) {
+      console.error('Error saving documentation:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to save documentation', 'error');
+      }
+    } finally {
+      if (btnSaveDocs) {
+        btnSaveDocs.disabled = false;
+        btnSaveDocs.textContent = 'Save Docs';
+      }
     }
   }
 
@@ -669,8 +891,8 @@
     const row = document.createElement('div');
     row.className = 'dynamic-item-row youtube-item-row';
     row.innerHTML = `
-      <input type="text" class="form-input form-input-standalone input-yt-title" placeholder="Video Title (e.g. 2-Min Demo Pitch)" value="${escapeHtml(title)}" style="flex: 1;">
-      <input type="url" class="form-input form-input-standalone input-yt-url" placeholder="https://youtube.com/watch?v=..." value="${escapeHtml(url)}" style="flex: 2;">
+      <input type="text" class="form-input form-input-standalone form-input-sm input-yt-title" placeholder="Video Title (e.g. 2-Min Pitch)" value="${escapeHtml(title)}" style="flex: 1; min-width: 120px;">
+      <input type="url" class="form-input form-input-standalone form-input-sm input-yt-url" placeholder="https://youtube.com/watch?v=..." value="${escapeHtml(url)}" style="flex: 2; min-width: 160px;">
       <button type="button" class="btn-remove-dynamic-row" title="Remove video">×</button>
     `;
     const removeBtn = row.querySelector('.btn-remove-dynamic-row');
@@ -688,8 +910,8 @@
     const row = document.createElement('div');
     row.className = 'dynamic-item-row resource-item-row';
     row.innerHTML = `
-      <input type="text" class="form-input form-input-standalone input-res-label" placeholder="Label (e.g. Figma, Slide Deck, API Docs)" value="${escapeHtml(label)}" style="flex: 1;">
-      <input type="url" class="form-input form-input-standalone input-res-url" placeholder="https://..." value="${escapeHtml(url)}" style="flex: 2;">
+      <input type="text" class="form-input form-input-standalone form-input-sm input-res-label" placeholder="Label (e.g. Figma, Slide Deck)" value="${escapeHtml(label)}" style="flex: 1; min-width: 120px;">
+      <input type="url" class="form-input form-input-standalone form-input-sm input-res-url" placeholder="https://..." value="${escapeHtml(url)}" style="flex: 2; min-width: 160px;">
       <button type="button" class="btn-remove-dynamic-row" title="Remove link">×</button>
     `;
     const removeBtn = row.querySelector('.btn-remove-dynamic-row');
@@ -697,93 +919,6 @@
       removeBtn.addEventListener('click', () => row.remove());
     }
     editResourceRowsContainer.appendChild(row);
-  }
-
-  /**
-   * Save Project Showcase Details (repo_url, demo_url, project_description_md, youtube_urls, resource_links)
-   */
-  async function handleSaveShowcaseDetails(e) {
-    e.preventDefault();
-    if (!window.supabaseClient || !isLeader || !hackathonId) return;
-
-    const repoUrl = (inputShowcaseRepoUrl?.value || '').trim() || null;
-    const demoUrl = (inputShowcaseDemoUrl?.value || '').trim() || null;
-    const descMd = (inputShowcaseDescMd?.value || '').trim() || null;
-
-    // Collect YouTube URLs
-    const youtubeItems = [];
-    if (editYouTubeRowsContainer) {
-      const rows = editYouTubeRowsContainer.querySelectorAll('.youtube-item-row');
-      rows.forEach(r => {
-        const u = (r.querySelector('.input-yt-url')?.value || '').trim();
-        const t = (r.querySelector('.input-yt-title')?.value || '').trim();
-        if (u) {
-          youtubeItems.push({ title: t, url: u });
-        }
-      });
-    }
-
-    // Collect Resource Links
-    const resourceItems = [];
-    if (editResourceRowsContainer) {
-      const rows = editResourceRowsContainer.querySelectorAll('.resource-item-row');
-      rows.forEach(r => {
-        const u = (r.querySelector('.input-res-url')?.value || '').trim();
-        const l = (r.querySelector('.input-res-label')?.value || '').trim();
-        if (u) {
-          resourceItems.push({ label: l || 'Resource', url: u });
-        }
-      });
-    }
-
-    if (btnSaveShowcaseDetails) {
-      btnSaveShowcaseDetails.disabled = true;
-      btnSaveShowcaseDetails.innerHTML = '<span>Saving changes...</span>';
-    }
-    if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.add('hidden');
-
-    try {
-      const payload = {
-        repo_url: repoUrl,
-        demo_url: demoUrl,
-        project_description_md: descMd,
-        youtube_urls: youtubeItems,
-        resource_links: resourceItems
-      };
-
-      const { data, error } = await window.supabaseClient
-        .from('hackathons')
-        .update(payload)
-        .eq('id', hackathonId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Update local state
-      if (currentHackathon) {
-        Object.assign(currentHackathon, payload);
-      }
-
-      renderProjectDetails(currentHackathon);
-      renderProjectShowcase(currentHackathon);
-
-      closeEditShowcaseModal();
-
-      if (typeof window.showToast === 'function') {
-        window.showToast('Project showcase details updated!', 'success');
-      }
-
-    } catch (err) {
-      console.error('Error updating project showcase:', err);
-      if (editShowcaseErrorMessage) editShowcaseErrorMessage.textContent = err.message || 'Failed to update project details.';
-      if (editShowcaseErrorBanner) editShowcaseErrorBanner.classList.remove('hidden');
-    } finally {
-      if (btnSaveShowcaseDetails) {
-        btnSaveShowcaseDetails.disabled = false;
-        btnSaveShowcaseDetails.innerHTML = '<span>Save Changes</span>';
-      }
-    }
   }
 
   // =========================================================================
@@ -1491,19 +1626,34 @@
       });
     }
 
-    // Project Showcase Editor Controls
-    if (btnEditProjectShowcase) {
-      btnEditProjectShowcase.addEventListener('click', openEditShowcaseModal);
-    }
-    if (btnCloseEditShowcaseModal) {
-      btnCloseEditShowcaseModal.addEventListener('click', closeEditShowcaseModal);
-    }
-    if (btnCancelEditShowcase) {
-      btnCancelEditShowcase.addEventListener('click', closeEditShowcaseModal);
-    }
-    if (editShowcaseForm) {
-      editShowcaseForm.addEventListener('submit', handleSaveShowcaseDetails);
-    }
+    // Project Showcase Per-Card Controls
+    // 1. Deliverables
+    if (btnEditDeliverables) btnEditDeliverables.addEventListener('click', toggleEditDeliverables);
+    if (btnSaveDeliverables) btnSaveDeliverables.addEventListener('click', saveDeliverablesUrls);
+    if (btnCancelDeliverables) btnCancelDeliverables.addEventListener('click', () => {
+      if (editDeliverablesBar) editDeliverablesBar.classList.add('hidden');
+    });
+
+    // 2. Demo Videos
+    if (btnEditVideos) btnEditVideos.addEventListener('click', toggleEditVideos);
+    if (btnSaveVideos) btnSaveVideos.addEventListener('click', saveVideos);
+    if (btnCancelVideos) btnCancelVideos.addEventListener('click', () => {
+      if (editVideosBar) editVideosBar.classList.add('hidden');
+    });
+
+    // 3. Project Resources
+    if (btnEditResources) btnEditResources.addEventListener('click', toggleEditResources);
+    if (btnSaveResources) btnSaveResources.addEventListener('click', saveResources);
+    if (btnCancelResources) btnCancelResources.addEventListener('click', () => {
+      if (editResourcesBar) editResourcesBar.classList.add('hidden');
+    });
+
+    // 4. Documentation & Overview
+    if (btnEditDocs) btnEditDocs.addEventListener('click', toggleEditDocs);
+    if (btnSaveDocs) btnSaveDocs.addEventListener('click', saveDocs);
+    if (btnCancelDocs) btnCancelDocs.addEventListener('click', () => {
+      if (editDocsBar) editDocsBar.classList.add('hidden');
+    });
     if (tabWriteMd) {
       tabWriteMd.addEventListener('click', () => switchMarkdownTab('write'));
     }
@@ -1613,8 +1763,17 @@
         if (createTaskModal && !createTaskModal.classList.contains('hidden')) {
           closeCreateTaskModal();
         }
-        if (showcaseEditPanel && !showcaseEditPanel.classList.contains('hidden')) {
-          closeEditShowcaseModal();
+        if (editDeliverablesBar && !editDeliverablesBar.classList.contains('hidden')) {
+          editDeliverablesBar.classList.add('hidden');
+        }
+        if (editVideosBar && !editVideosBar.classList.contains('hidden')) {
+          editVideosBar.classList.add('hidden');
+        }
+        if (editResourcesBar && !editResourcesBar.classList.contains('hidden')) {
+          editResourcesBar.classList.add('hidden');
+        }
+        if (editDocsBar && !editDocsBar.classList.contains('hidden')) {
+          editDocsBar.classList.add('hidden');
         }
       }
     });
