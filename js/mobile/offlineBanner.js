@@ -2,9 +2,12 @@
 import { showToast } from './toast.js';
 
 let bannerEl = null;
+let isReallyOffline = false;
 
 export function isOffline() {
-  return typeof navigator !== 'undefined' && !navigator.onLine;
+  if (typeof navigator === 'undefined') return false;
+  if (navigator.onLine) return false;
+  return isReallyOffline;
 }
 
 export function checkOnlineAction(actionName = 'perform this action') {
@@ -13,6 +16,27 @@ export function checkOnlineAction(actionName = 'perform this action') {
     return false;
   }
   return true;
+}
+
+async function verifyConnectivity() {
+  if (typeof navigator !== 'undefined' && navigator.onLine) {
+    return true;
+  }
+  // If navigator.onLine says false, test with a lightweight ping to verify
+  // Many mobile browsers (iOS Safari, Android WebViews, Battery Saver) falsely report false
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2500);
+    const resp = await fetch(window.location.origin + '/favicon.svg?_t=' + Date.now(), {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    return resp.ok || resp.status < 500;
+  } catch (_) {
+    return false;
+  }
 }
 
 export function initOfflineBanner() {
@@ -35,10 +59,19 @@ export function initOfflineBanner() {
   `;
   document.body.prepend(bannerEl);
 
-  function updateStatus() {
+  async function updateStatus() {
     if (!navigator.onLine) {
+      const online = await verifyConnectivity();
+      if (online) {
+        // False alarm from navigator.onLine
+        isReallyOffline = false;
+        bannerEl.classList.remove('visible');
+        return;
+      }
+      isReallyOffline = true;
       bannerEl.classList.add('visible');
     } else {
+      isReallyOffline = false;
       if (bannerEl.classList.contains('visible')) {
         bannerEl.classList.remove('visible');
         showToast('Back online!', 'success');
@@ -48,5 +81,9 @@ export function initOfflineBanner() {
 
   window.addEventListener('online', updateStatus);
   window.addEventListener('offline', updateStatus);
-  updateStatus();
+
+  // Check on initial load if navigator claims offline
+  if (!navigator.onLine) {
+    updateStatus();
+  }
 }
