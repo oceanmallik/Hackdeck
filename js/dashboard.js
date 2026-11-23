@@ -3,6 +3,9 @@
   // DOM Elements
   const myHackathonsGrid = document.getElementById('myHackathonsGrid');
   const statActiveBoards = document.getElementById('statActiveBoards');
+  const statTotalProjects = document.getElementById('statTotalProjects');
+  const statPitchedIdeas = document.getElementById('statPitchedIdeas');
+  const statSubmissions = document.getElementById('statSubmissions');
 
   // Create Hackathon Modal Elements
   const createHackathonModal = document.getElementById('createHackathonModal');
@@ -835,6 +838,9 @@
       if (!user) {
         cachedHackathons = [];
         if (statActiveBoards) statActiveBoards.textContent = '0';
+        if (statTotalProjects) statTotalProjects.textContent = '0';
+        if (statPitchedIdeas) statPitchedIdeas.textContent = '0';
+        if (statSubmissions) statSubmissions.textContent = '0';
         if (myHackathonsGrid) {
           myHackathonsGrid.innerHTML = `
             <div class="empty-hackathons-state">
@@ -1001,9 +1007,65 @@
         }
       }
 
-      // Update Active Boards stat
+      // Update All Metric Stats with real database calculations
+      const now = Date.now();
+      
+      // 1. Total Projects (total hackathon project workspaces the user belongs to)
+      if (statTotalProjects) {
+        statTotalProjects.textContent = cachedHackathons.length;
+      }
+
+      // 2. Active Boards (workspaces that are currently ongoing / active deadline)
+      const activeBoardsCount = cachedHackathons.filter(h => {
+        if (!h.deadline_at) return true;
+        return new Date(h.deadline_at).getTime() > now;
+      }).length;
       if (statActiveBoards) {
-        statActiveBoards.textContent = cachedHackathons.length;
+        statActiveBoards.textContent = activeBoardsCount;
+      }
+
+      // 3. Submissions (workspaces with deliverables linked or ended)
+      const submissionsCount = cachedHackathons.filter(h => {
+        const hasDeliverables = Boolean((h.repo_url && h.repo_url.trim()) || (h.demo_url && h.demo_url.trim()));
+        const isPastDeadline = Boolean(h.deadline_at && new Date(h.deadline_at).getTime() <= now);
+        return hasDeliverables || isPastDeadline;
+      }).length;
+      if (statSubmissions) {
+        statSubmissions.textContent = submissionsCount;
+      }
+
+      // 4. Pitched Ideas (count ideas from idea_polls)
+      let pitchedIdeasCount = 0;
+      try {
+        const hackathonIds = cachedHackathons.map(h => h.id).filter(Boolean);
+
+        // Fetch ideas across user's hackathons
+        if (hackathonIds.length > 0) {
+          const { data: boardIdeas, error: boardErr } = await window.supabaseClient
+            .from('idea_polls')
+            .select('id')
+            .in('hackathon_id', hackathonIds);
+
+          if (!boardErr && Array.isArray(boardIdeas)) {
+            pitchedIdeasCount = boardIdeas.length;
+          }
+        }
+
+        // Query ideas created by user (in case any were in another board)
+        const { data: myIdeas, error: myErr } = await window.supabaseClient
+          .from('idea_polls')
+          .select('id')
+          .eq('created_by', user.id);
+
+        if (!myErr && Array.isArray(myIdeas)) {
+          pitchedIdeasCount = Math.max(pitchedIdeasCount, myIdeas.length);
+        }
+      } catch (ideaErr) {
+        console.warn('Could not query pitched ideas:', ideaErr);
+      }
+
+      if (statPitchedIdeas) {
+        statPitchedIdeas.textContent = pitchedIdeasCount;
       }
 
       applyFilter(currentFilter);
@@ -1324,6 +1386,9 @@
         cachedHackathons = [];
         if (myHackathonsGrid) myHackathonsGrid.innerHTML = '';
         if (statActiveBoards) statActiveBoards.textContent = '0';
+        if (statTotalProjects) statTotalProjects.textContent = '0';
+        if (statPitchedIdeas) statPitchedIdeas.textContent = '0';
+        if (statSubmissions) statSubmissions.textContent = '0';
         if (countdownTimerId) clearInterval(countdownTimerId);
       }
     });
