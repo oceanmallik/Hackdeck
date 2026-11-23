@@ -139,8 +139,13 @@ strong, b {
 }
 
 ::selection {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
+  background: #ef4444;
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 /* Utilities */
