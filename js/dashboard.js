@@ -429,6 +429,8 @@
    * Render Individual Redesigned Hackathon Card
    */
   function renderHackathonCardHtml(h) {
+    const user = window.currentUser || (window.HackdeckAuth && window.HackdeckAuth.getUser && window.HackdeckAuth.getUser());
+    const isLeader = Boolean(user && h.leader_id === user.id);
     const isSubmitted = (h.phase && String(h.phase).toLowerCase() === 'submitted');
     const isPublic = Boolean(h.is_public);
     const { text: countdownText, isEnded } = formatCountdown(h.deadline_at);
@@ -632,14 +634,28 @@
       </div>
     `;
 
-    // 6. Action button: Full-width white button with right arrow nudging on hover
-    const buttonHtml = `
-      <a href="board.html?id=${encodeURIComponent(h.id)}" class="hk-open-btn">
-        <span>Open workspace</span>
-        <svg class="hk-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="9 18 15 12 9 6"></polyline>
+    // 6. Action button & Leader Delete button
+    const deleteButtonHtml = isLeader ? `
+      <button type="button" class="hk-delete-btn btn-delete-hackathon" data-hackathon-id="${escapeHtml(h.id)}" data-hackathon-title="${escapeHtml(h.title)}" title="Delete hackathon board">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
         </svg>
-      </a>
+      </button>
+    ` : '';
+
+    const buttonHtml = `
+      <div class="hk-card-actions-row">
+        <a href="board.html?id=${encodeURIComponent(h.id)}" class="hk-open-btn">
+          <span>Open workspace</span>
+          <svg class="hk-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </a>
+        ${deleteButtonHtml}
+      </div>
     `;
 
     return `
@@ -710,6 +726,58 @@
 
     // Re-bind triggers on dynamically created shortcut cards
     bindCreateModalTriggers();
+
+    // Bind delete hackathon triggers (leader only)
+    bindDeleteHackathonTriggers();
+  }
+
+  /**
+   * Bind Delete Hackathon buttons
+   */
+  function bindDeleteHackathonTriggers() {
+    const deleteBtns = document.querySelectorAll('.btn-delete-hackathon');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const hackathonId = btn.getAttribute('data-hackathon-id');
+        const hackathonTitle = btn.getAttribute('data-hackathon-title') || 'this hackathon';
+        if (!hackathonId) return;
+
+        const confirmed = window.confirm(`Are you sure you want to delete "${hackathonTitle}"? This will permanently remove the hackathon workspace, tasks, brainstorm ideas, and chat.`);
+        if (!confirmed) return;
+
+        btn.disabled = true;
+        btn.classList.add('is-deleting');
+
+        try {
+          if (!window.supabaseClient) throw new Error('Supabase client not initialized');
+
+          // Delete from public.hackathons (leader only enforced by RLS)
+          const { error } = await window.supabaseClient
+            .from('hackathons')
+            .delete()
+            .eq('id', hackathonId);
+
+          if (error) throw error;
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(`Hackathon "${hackathonTitle}" was deleted.`, 'success');
+          }
+
+          // Reload hackathons
+          await loadMyHackathons();
+        } catch (err) {
+          console.error('Error deleting hackathon:', err);
+          btn.disabled = false;
+          btn.classList.remove('is-deleting');
+          if (typeof window.showToast === 'function') {
+            window.showToast(err.message || 'Failed to delete hackathon', 'error');
+          }
+        }
+      });
+    });
   }
 
   /**

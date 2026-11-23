@@ -37,6 +37,7 @@
   const btnCopyShareLink = document.getElementById('btnCopyShareLink');
   const btnTogglePhase = document.getElementById('btnTogglePhase');
   const phaseActionText = document.getElementById('phaseActionText');
+  const btnDeleteBoard = document.getElementById('btnDeleteBoard');
 
   // Auth Header Chip
   const boardAuthBadge = document.getElementById('boardAuthBadge');
@@ -492,6 +493,56 @@
   }
 
   /**
+   * Delete Hackathon (Leader Only)
+   */
+  async function deleteCurrentHackathon() {
+    if (!isLeader || !currentHackathon) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('Only team leaders can delete this hackathon workspace.', 'error');
+      }
+      return;
+    }
+
+    const title = currentHackathon.title || 'this hackathon';
+    const confirmed = window.confirm(`Are you sure you want to delete "${title}"? This will permanently remove the entire hackathon workspace, tasks, brainstorm ideas, and team chat.`);
+    if (!confirmed) return;
+
+    if (btnDeleteBoard) {
+      btnDeleteBoard.disabled = true;
+      btnDeleteBoard.classList.add('is-deleting');
+    }
+
+    try {
+      if (!window.supabaseClient) throw new Error('Supabase client not initialized');
+
+      const { error } = await window.supabaseClient
+        .from('hackathons')
+        .delete()
+        .eq('id', currentHackathon.id);
+
+      if (error) throw error;
+
+      if (typeof window.showToast === 'function') {
+        window.showToast(`Hackathon "${title}" was successfully deleted.`, 'success');
+      }
+
+      // Redirect back to dashboard after deletion
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 500);
+    } catch (err) {
+      console.error('Error deleting hackathon:', err);
+      if (btnDeleteBoard) {
+        btnDeleteBoard.disabled = false;
+        btnDeleteBoard.classList.remove('is-deleting');
+      }
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to delete hackathon', 'error');
+      }
+    }
+  }
+
+  /**
    * Subscribe to public.hackathons changes via Supabase Realtime
    * So when phase changes from 'brainstorm' to 'build', all teammates transition without reload
    */
@@ -824,6 +875,9 @@
     }
     if (btnReopenBuild) {
       btnReopenBuild.addEventListener('click', reopenBuildPhase);
+    }
+    if (btnDeleteBoard) {
+      btnDeleteBoard.addEventListener('click', deleteCurrentHackathon);
     }
 
     // Team Chat Toggle

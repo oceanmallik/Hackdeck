@@ -375,6 +375,27 @@ strong, b {
   background-color: var(--bg-card);
 }
 
+.btn-danger-outline {
+  background-color: transparent;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.btn-danger-outline:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #f87171;
+}
+
+.btn-danger-outline:active {
+  background-color: rgba(239, 68, 68, 0.18);
+}
+
+.btn-danger-outline.is-deleting {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: var(--font-size-12);
