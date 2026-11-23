@@ -74,7 +74,7 @@
     if (boardLoadingState) boardLoadingState.classList.add('hidden');
     if (boardMainContent) boardMainContent.classList.add('hidden');
     if (accessDeniedScreen) accessDeniedScreen.classList.remove('hidden');
-    document.title = 'Private or Not Found — Hackdeck';
+    document.title = 'Private or Not Found | Hackdeck';
   }
 
   /**
@@ -601,7 +601,7 @@
           if (updated.title && updated.title !== currentHackathon.title) {
             currentHackathon.title = updated.title;
             if (boardTitle) boardTitle.textContent = updated.title;
-            document.title = `${updated.title} — Hackdeck`;
+            document.title = `${updated.title} | Hackdeck`;
           }
 
           // 5. Event URL change
@@ -740,7 +740,7 @@
 
     // Render Header Info
     if (boardTitle) boardTitle.textContent = currentHackathon.title;
-    document.title = `${currentHackathon.title} — Hackdeck`;
+    document.title = `${currentHackathon.title} | Hackdeck`;
 
     updateEventUrlBadge(currentHackathon.event_url);
 
