@@ -1064,6 +1064,211 @@
   }
 
   /**
+   * Initialize interactive live showcase simulation for hero landing board
+   * Moves a task with a simulated cursor and simulates real-time teammate chat
+   */
+  function initHeroShowcaseSimulation() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    const kanbanPanel = document.getElementById('previewKanbanPanel');
+    const simCursor = document.getElementById('kanbanSimCursor');
+    const movingCard = document.getElementById('previewMovingCard');
+    const todoContainer = document.getElementById('todoCardsContainer');
+    const inProgressContainer = document.getElementById('inProgressCardsContainer');
+    const todoCount = document.getElementById('todoColCount');
+    const inProgressCount = document.getElementById('inProgressColCount');
+
+    const chatFeed = document.getElementById('previewChatFeed');
+    const typingRow = document.getElementById('chatTypingRow');
+    const mockInput = document.getElementById('chatMockInput');
+    const mockPlaceholder = document.getElementById('chatMockPlaceholder');
+    const mockTypedText = document.getElementById('chatMockTypedText');
+    const mockSendBtn = document.getElementById('chatMockSendBtn');
+
+    if (!kanbanPanel || !simCursor || !movingCard || !inProgressContainer || !chatFeed) return;
+
+    let isCardMoved = false;
+    let simTimeoutId = null;
+
+    function runSimulationCycle() {
+      if (document.hidden) {
+        simTimeoutId = setTimeout(runSimulationCycle, 2000);
+        return;
+      }
+
+      // Step 1: Cursor animates to hover over the card in To Do
+      if (!isCardMoved) {
+        const panelRect = kanbanPanel.getBoundingClientRect();
+        const cardRect = movingCard.getBoundingClientRect();
+
+        const targetX = (cardRect.left - panelRect.left) + cardRect.width * 0.45;
+        const targetY = (cardRect.top - panelRect.top) + cardRect.height * 0.45;
+
+        // Start cursor near bottom-left and fade in
+        simCursor.style.transition = 'opacity 300ms ease, transform 600ms cubic-bezier(0.25, 1, 0.5, 1)';
+        simCursor.style.opacity = '1';
+        simCursor.style.transform = `translate(${targetX - 50}px, ${targetY + 40}px)`;
+
+        // Glide onto card
+        setTimeout(() => {
+          simCursor.style.transform = `translate(${targetX}px, ${targetY}px)`;
+        }, 350);
+
+        // Step 2: Grab the card
+        setTimeout(() => {
+          movingCard.classList.add('card-drag-active');
+          simCursor.classList.add('is-grabbing');
+        }, 1100);
+
+        // Step 3: Drag card over to In Progress column
+        setTimeout(() => {
+          const inProgressRect = inProgressContainer.getBoundingClientRect();
+          const destX = (inProgressRect.left - panelRect.left) + cardRect.width * 0.45;
+          const destY = (inProgressRect.top - panelRect.top) + 24;
+
+          const deltaX = destX - targetX;
+          const deltaY = destY - targetY;
+
+          movingCard.style.transition = 'transform 900ms cubic-bezier(0.25, 1, 0.5, 1)';
+          movingCard.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.03) rotate(2deg)`;
+
+          simCursor.style.transition = 'transform 900ms cubic-bezier(0.25, 1, 0.5, 1)';
+          simCursor.style.transform = `translate(${destX}px, ${destY}px)`;
+        }, 1500);
+
+        // Step 4: Drop card into In Progress
+        setTimeout(() => {
+          movingCard.classList.remove('card-drag-active');
+          movingCard.style.transition = 'none';
+          movingCard.style.transform = 'none';
+          inProgressContainer.prepend(movingCard);
+
+          if (todoCount) todoCount.textContent = '0';
+          if (inProgressCount) inProgressCount.textContent = '3';
+          isCardMoved = true;
+
+          // Cursor glides away and fades out
+          simCursor.classList.remove('is-grabbing');
+          simCursor.style.transition = 'opacity 400ms ease, transform 600ms ease';
+          const currentX = parseFloat(simCursor.style.transform.match(/translate\(([^p]+)px/)?.[1] || 0);
+          const currentY = parseFloat(simCursor.style.transform.match(/,\s*([^p]+)px/)?.[1] || 0);
+          simCursor.style.transform = `translate(${currentX + 40}px, ${currentY + 50}px)`;
+          simCursor.style.opacity = '0';
+        }, 2500);
+      }
+
+      // Step 5: Teammate typing indicator appears in chat (tasfiashimu)
+      setTimeout(() => {
+        if (typingRow) {
+          typingRow.style.display = 'flex';
+          chatFeed.scrollTop = chatFeed.scrollHeight;
+        }
+      }, 3200);
+
+      // Step 6: Teammate sends message
+      let peerNewMsg = null;
+      setTimeout(() => {
+        if (typingRow) typingRow.style.display = 'none';
+
+        peerNewMsg = document.createElement('div');
+        peerNewMsg.className = 'chat-preview-msg msg-peer chat-msg-dynamic';
+        peerNewMsg.innerHTML = `
+          <div class="cmsg-avatar" aria-hidden="true">T</div>
+          <div class="cmsg-content">
+            <div class="cmsg-meta">
+              <span class="cmsg-name">Tasfia</span>
+              <span class="cmsg-handle">@tasfiashimu</span>
+              <span class="cmsg-time">Just now</span>
+            </div>
+            <div class="cmsg-bubble">
+              Sprint board updated! All core modules are green.
+            </div>
+          </div>
+        `;
+        chatFeed.appendChild(peerNewMsg);
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+      }, 5400);
+
+      // Step 7: You start typing in the chat input
+      const messageToType = "Awesome, locking in the submission now!";
+      setTimeout(() => {
+        if (mockInput && mockPlaceholder && mockTypedText) {
+          mockPlaceholder.style.display = 'none';
+          mockTypedText.textContent = '';
+          mockInput.classList.add('is-typing-active');
+
+          let charIdx = 0;
+          const typeInterval = setInterval(() => {
+            if (charIdx < messageToType.length) {
+              mockTypedText.textContent += messageToType.charAt(charIdx);
+              charIdx++;
+            } else {
+              clearInterval(typeInterval);
+
+              // Press send button
+              setTimeout(() => {
+                if (mockSendBtn) mockSendBtn.classList.add('btn-active-send');
+              }, 300);
+
+              // Send message from You (oceanmallik)
+              setTimeout(() => {
+                if (mockSendBtn) mockSendBtn.classList.remove('btn-active-send');
+                mockTypedText.textContent = '';
+                mockPlaceholder.style.display = 'inline';
+                mockInput.classList.remove('is-typing-active');
+
+                const myNewMsg = document.createElement('div');
+                myNewMsg.className = 'chat-preview-msg msg-me chat-msg-dynamic';
+                myNewMsg.innerHTML = `
+                  <div class="cmsg-content">
+                    <div class="cmsg-meta">
+                      <span class="cmsg-time">Just now</span>
+                      <span class="cmsg-name">oceanmallik</span>
+                    </div>
+                    <div class="cmsg-bubble">
+                      ${messageToType}
+                    </div>
+                  </div>
+                `;
+                chatFeed.appendChild(myNewMsg);
+                chatFeed.scrollTop = chatFeed.scrollHeight;
+              }, 600);
+            }
+          }, 45);
+        }
+      }, 6800);
+
+      // Step 8: Clean reset and cycle loop
+      simTimeoutId = setTimeout(() => {
+        // Reset card back to Todo
+        if (isCardMoved && movingCard && todoContainer) {
+          todoContainer.appendChild(movingCard);
+          movingCard.style.transform = 'none';
+          if (todoCount) todoCount.textContent = '1';
+          if (inProgressCount) inProgressCount.textContent = '2';
+          isCardMoved = false;
+        }
+
+        // Clean up dynamic chat messages
+        const dynamicMsgs = chatFeed.querySelectorAll('.chat-msg-dynamic');
+        dynamicMsgs.forEach(m => m.remove());
+        if (mockTypedText) mockTypedText.textContent = '';
+        if (mockPlaceholder) mockPlaceholder.style.display = 'inline';
+        if (mockInput) mockInput.classList.remove('is-typing-active');
+        if (typingRow) typingRow.style.display = 'none';
+
+        // Loop next cycle
+        simTimeoutId = setTimeout(runSimulationCycle, 1500);
+      }, 14500);
+    }
+
+    // Trigger simulation start
+    setTimeout(runSimulationCycle, 1000);
+  }
+
+  /**
    * Initialize Dashboard
    */
   function init() {
@@ -1106,8 +1311,9 @@
     // Bind all create triggers
     bindCreateModalTriggers();
 
-    // Start hero landing board countdown ticker
+    // Start hero landing board countdown ticker & live interactive showcase simulation
     initHeroTimer();
+    initHeroShowcaseSimulation();
 
     // Listen for auth state change
     window.addEventListener('hackdeck:auth-change', (e) => {

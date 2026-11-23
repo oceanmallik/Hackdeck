@@ -159,7 +159,16 @@
               <div class="board-canvas-grid">
                 
                 <!-- Inner Panel 2: Sprint Task Kanban (bg-page, 1px border, 16px radius, 20px padding) -->
-                <div class="board-canvas-kanban">
+                <div class="board-canvas-kanban" id="previewKanbanPanel">
+                  
+                  <!-- Animated Simulated Collaborator Cursor -->
+                  <div class="kanban-sim-cursor" id="kanbanSimCursor" aria-hidden="true">
+                    <svg class="sim-cursor-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 3L11 21L14.5 13.5L22 10L4 3Z" fill="#ffffff" stroke="#171717" stroke-width="1.5" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="sim-cursor-tag">tasnimnimu</span>
+                  </div>
+
                   <div class="canvas-section-heading">
                     <div class="section-heading-left">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>
@@ -171,35 +180,35 @@
                   <div class="kanban-preview-columns">
                     
                     <!-- Column 1: To Do -->
-                    <div class="kanban-col-preview">
+                    <div class="kanban-col-preview" id="previewColTodo">
                       <div class="col-preview-header">
                         <span class="col-dot" aria-hidden="true"></span>
                         <span class="col-title">To do</span>
-                        <span class="col-count">1</span>
+                        <span class="col-count" id="todoColCount">1</span>
                       </div>
-                      <div class="col-preview-cards">
-                        <div class="kanban-card-preview">
+                      <div class="col-preview-cards" id="todoCardsContainer">
+                        <div class="kanban-card-preview" id="previewMovingCard">
                           <div class="kcard-top">
                             <span class="kcard-tag">Pitch</span>
                             <span class="kcard-time">30m</span>
                           </div>
                           <div class="kcard-title">Record 3-min demo video walkthrough</div>
                           <div class="kcard-bottom">
-                            <div class="kcard-avatar" aria-hidden="true">O</div>
-                            <span class="kcard-assignee">@oceanmallik</span>
+                            <div class="kcard-avatar" aria-hidden="true">T</div>
+                            <span class="kcard-assignee">@tasfiashimu</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <!-- Column 2: In Progress -->
-                    <div class="kanban-col-preview">
+                    <div class="kanban-col-preview" id="previewColInProgress">
                       <div class="col-preview-header">
                         <span class="col-dot" aria-hidden="true"></span>
                         <span class="col-title">In progress</span>
-                        <span class="col-count">2</span>
+                        <span class="col-count" id="inProgressColCount">2</span>
                       </div>
-                      <div class="col-preview-cards">
+                      <div class="col-preview-cards" id="inProgressCardsContainer">
                         <div class="kanban-card-preview kcard-active">
                           <div class="kcard-top">
                             <span class="kcard-tag">P0 · High</span>
@@ -218,21 +227,21 @@
                           </div>
                           <div class="kcard-title">Project showcase inline editing cards</div>
                           <div class="kcard-bottom">
-                            <div class="kcard-avatar" aria-hidden="true">S</div>
-                            <span class="kcard-assignee">@sam_dev</span>
+                            <div class="kcard-avatar" aria-hidden="true">T</div>
+                            <span class="kcard-assignee">@tasnimnimu</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <!-- Column 3: Done -->
-                    <div class="kanban-col-preview">
+                    <div class="kanban-col-preview" id="previewColDone">
                       <div class="col-preview-header">
                         <span class="col-dot" aria-hidden="true"></span>
                         <span class="col-title">Done</span>
-                        <span class="col-count">2</span>
+                        <span class="col-count" id="doneColCount">2</span>
                       </div>
-                      <div class="col-preview-cards">
+                      <div class="col-preview-cards" id="doneCardsContainer">
                         <div class="kanban-card-preview">
                           <div class="kcard-top">
                             <span class="kcard-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg> Shipped</span>
@@ -249,8 +258,8 @@
                           </div>
                           <div class="kcard-title">Modular hackathon boards & countdown timer</div>
                           <div class="kcard-bottom">
-                            <div class="kcard-avatar" aria-hidden="true">A</div>
-                            <span class="kcard-assignee">@alex_lead</span>
+                            <div class="kcard-avatar" aria-hidden="true">T</div>
+                            <span class="kcard-assignee">@tasfiashimu</span>
                           </div>
                         </div>
                       </div>
@@ -269,14 +278,14 @@
                     <span class="chat-live-badge"><span class="chat-status-dot" aria-hidden="true"></span><span>Live chat</span></span>
                   </div>
 
-                  <div class="chat-preview-feed">
+                  <div class="chat-preview-feed" id="previewChatFeed">
                     <!-- Teammate 1 -->
                     <div class="chat-preview-msg msg-peer">
-                      <div class="cmsg-avatar" aria-hidden="true">A</div>
+                      <div class="cmsg-avatar" aria-hidden="true">T</div>
                       <div class="cmsg-content">
                         <div class="cmsg-meta">
-                          <span class="cmsg-name">Alex</span>
-                          <span class="cmsg-handle">@alex_lead</span>
+                          <span class="cmsg-name">Tasnim</span>
+                          <span class="cmsg-handle">@tasnimnimu</span>
                           <span class="cmsg-time">2m ago</span>
                         </div>
                         <div class="cmsg-bubble">
@@ -287,11 +296,11 @@
 
                     <!-- Teammate 2 -->
                     <div class="chat-preview-msg msg-peer">
-                      <div class="cmsg-avatar" aria-hidden="true">M</div>
+                      <div class="cmsg-avatar" aria-hidden="true">T</div>
                       <div class="cmsg-content">
                         <div class="cmsg-meta">
-                          <span class="cmsg-name">Maya</span>
-                          <span class="cmsg-handle">@maya_ui</span>
+                          <span class="cmsg-name">Tasfia</span>
+                          <span class="cmsg-handle">@tasfiashimu</span>
                           <span class="cmsg-time">1m ago</span>
                         </div>
                         <div class="cmsg-bubble">
@@ -312,13 +321,31 @@
                         </div>
                       </div>
                     </div>
+
+                    <!-- Typing indicator placeholder -->
+                    <div class="chat-preview-msg msg-peer chat-typing-row" id="chatTypingRow" style="display: none;" aria-hidden="true">
+                      <div class="cmsg-avatar" aria-hidden="true">T</div>
+                      <div class="cmsg-content">
+                        <div class="cmsg-meta">
+                          <span class="cmsg-name">Tasfia</span>
+                          <span class="cmsg-handle">@tasfiashimu</span>
+                          <span class="cmsg-time">typing...</span>
+                        </div>
+                        <div class="cmsg-bubble typing-bubble">
+                          <span class="typing-dot"></span>
+                          <span class="typing-dot"></span>
+                          <span class="typing-dot"></span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- Mock Chat Input: bg-card, 1px border, 8px radius -->
                   <div class="chat-preview-input-row">
-                    <div class="chat-mock-input" tabindex="0" role="textbox" aria-label="Type message to team">
-                      <span class="chat-mock-placeholder">Type message to team...</span>
-                      <button type="button" class="chat-mock-send-btn" aria-label="Send message">
+                    <div class="chat-mock-input" id="chatMockInput" tabindex="0" role="textbox" aria-label="Type message to team">
+                      <span class="chat-mock-placeholder" id="chatMockPlaceholder">Type message to team...</span>
+                      <span class="chat-mock-typed-text" id="chatMockTypedText"></span>
+                      <button type="button" class="chat-mock-send-btn" id="chatMockSendBtn" aria-label="Send message">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                       </button>
                     </div>

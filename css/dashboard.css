@@ -791,6 +791,138 @@
 }
 
 /* ==========================================================================
+   Hero Board Live Simulation (Moving Cursor, Dynamic Task Drag, Live Chat)
+   ========================================================================== */
+.board-canvas-kanban {
+  position: relative;
+  overflow: hidden;
+}
+
+.kanban-sim-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transform: translate(-100px, -100px);
+  transition: opacity 250ms ease, transform 650ms cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform, opacity;
+}
+
+.sim-cursor-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  transition: transform 150ms ease;
+}
+
+.kanban-sim-cursor.is-grabbing .sim-cursor-icon {
+  transform: scale(0.88);
+}
+
+.sim-cursor-tag {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary, #ffffff);
+  background-color: var(--bg-elevated, #232323);
+  border: 1px solid var(--border-hover, #3a3a3a);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.card-drag-active {
+  z-index: 30 !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5) !important;
+  border-color: var(--border-hover, #3a3a3a) !important;
+  background-color: var(--bg-elevated, #232323) !important;
+  pointer-events: none;
+}
+
+/* Chat Typing Animation */
+.typing-bubble {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px !important;
+  min-height: 32px;
+}
+
+.typing-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--text-secondary, #a1a1a1);
+  opacity: 0.35;
+  animation: typingDotPulse 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDotPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* Chat Mock Input Typing Simulation */
+.chat-mock-typed-text {
+  font-size: var(--font-size-12, 12px);
+  color: var(--text-primary, #ffffff);
+  display: inline-block;
+  min-height: 16px;
+}
+
+.chat-mock-input.is-typing-active {
+  border-color: var(--border-hover, #3a3a3a);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.chat-mock-input.is-typing-active .chat-mock-typed-text::after {
+  content: '|';
+  color: var(--text-secondary, #a1a1a1);
+  animation: typingCaretBlink 0.8s infinite;
+  margin-left: 1px;
+}
+
+@keyframes typingCaretBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.chat-mock-send-btn.btn-active-send {
+  transform: scale(0.9);
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.chat-msg-dynamic {
+  animation: chatMsgSlideIn 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes chatMsgSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
    Prefers-Reduced-Motion Support
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
@@ -802,8 +934,16 @@
   .navbar #btnGoogleSignIn,
   .canvas-badge-link,
   .chat-mock-input,
-  .chat-mock-send-btn {
+  .chat-mock-send-btn,
+  .kanban-sim-cursor,
+  .chat-typing-row,
+  .typing-dot,
+  .chat-msg-dynamic {
+    animation: none !important;
     transition: none !important;
+  }
+  .kanban-sim-cursor {
+    display: none !important;
   }
 }
 
