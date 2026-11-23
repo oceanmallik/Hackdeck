@@ -2,12 +2,11 @@
 import { haptic } from './haptics.js';
 import { showToast } from './toast.js';
 import { openBottomSheet } from './bottomSheet.js';
-import { checkOnlineAction } from './offlineBanner.js';
 
 let activeChatSheet = null;
 let hasUnreadMessages = false;
-let messageFeedEl = null;
-let newMsgPillEl = null;
+let originalChatParent = null;
+let originalChatNextSibling = null;
 
 export function initChatSheet({ hackathonId, user, profile, isMember, isSpectator }) {
   if (isSpectator || !isMember) {
@@ -61,7 +60,6 @@ function clearUnreadDot() {
 }
 
 function listenForTeammateMessages(hackathonId, user) {
-  // Check desktop chat messages container for new messages
   const desktopFeed = document.getElementById('teamChatMessages');
   if (desktopFeed) {
     const observer = new MutationObserver((mutations) => {
@@ -73,13 +71,8 @@ function listenForTeammateMessages(hackathonId, user) {
               if (senderId && senderId !== user?.id) {
                 if (!activeChatSheet) {
                   showUnreadDot();
-                } else if (messageFeedEl) {
-                  // If sheet is open and not near bottom, show "New messages ↓" pill
-                  if (!isScrolledNearBottom(messageFeedEl)) {
-                    showNewMessagesPill();
-                  } else {
-                    scrollToBottom(messageFeedEl, true);
-                  }
+                } else {
+                  desktopFeed.scrollTo({ top: desktopFeed.scrollHeight, behavior: 'smooth' });
                 }
               }
             }
@@ -93,263 +86,105 @@ function listenForTeammateMessages(hackathonId, user) {
 
 /**
  * Open Team Room Bottom Sheet (~92dvh)
+ * Mounts the real #teamChatMessages and #teamChatForm directly into the sheet
  */
 function openTeamChatSheet(hackathonId) {
+  const messagesEl = document.getElementById('teamChatMessages');
+  const formEl = document.getElementById('teamChatForm');
+
+  if (!messagesEl || !formEl) {
+    showToast('Chat is initializing...', 'info');
+    return;
+  }
+
+  // Preserve desktop parent reference so we can cleanly restore on close
+  if (!originalChatParent) {
+    originalChatParent = messagesEl.parentNode;
+    originalChatNextSibling = formEl.nextSibling;
+  }
+
   const container = document.createElement('div');
   container.className = 'chat-sheet-container';
 
-  // Feed container
-  messageFeedEl = document.createElement('div');
-  messageFeedEl.className = 'chat-sheet-feed';
+  // Mount real living messages and form elements into bottom sheet
+  container.appendChild(messagesEl);
+  container.appendChild(formEl);
 
-  // Render current chat history
-  renderChatMessages(messageFeedEl);
-
-  // New messages pill
-  newMsgPillEl = document.createElement('div');
-  newMsgPillEl.className = 'chat-new-msg-pill';
-  newMsgPillEl.style.display = 'none';
-  newMsgPillEl.textContent = 'New messages ↓';
-  newMsgPillEl.onclick = () => {
-    haptic(10);
-    scrollToBottom(messageFeedEl, true);
-    newMsgPillEl.style.display = 'none';
-  };
-
-  // Input Row
-  const inputRow = document.createElement('div');
-  inputRow.className = 'chat-sheet-input-row';
-
-  const textarea = document.createElement('textarea');
-  textarea.className = 'chat-sheet-textarea';
-  textarea.placeholder = 'Type message...';
-  textarea.rows = 1;
-  textarea.setAttribute('autocapitalize', 'sentences');
-
-  const sendBtn = document.createElement('button');
-  sendBtn.type = 'button';
-  sendBtn.className = 'chat-sheet-send-btn';
-  sendBtn.disabled = true;
-  sendBtn.setAttribute('aria-label', 'Send message');
-  sendBtn.innerHTML = `
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <line x1="22" y1="2" x2="11" y2="13"></line>
-      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-    </svg>
-  `;
-
-  // Auto-grow textarea up to 4 lines
-  textarea.addEventListener('input', () => {
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
-    sendBtn.disabled = !textarea.value.trim();
-  });
-
-  // Enter to send on desktop browsers, Enter = newline on touch devices
-  const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-  textarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      if (!isTouchDevice && !e.shiftKey) {
-        e.preventDefault();
-        sendBtn.click();
-      }
-    }
-  });
-
-  sendBtn.addEventListener('click', async () => {
-    const content = textarea.value.trim();
-    if (!content) return;
-    if (!checkOnlineAction('send messages')) return;
-
-    haptic(10);
-    textarea.value = '';
-    textarea.style.height = 'auto';
-    sendBtn.disabled = true;
-
-    // Optimistic Bubble
-    const optimisticRow = renderOptimisticBubble(content, messageFeedEl);
-    scrollToBottom(messageFeedEl, true);
-
-    try {
-      if (window.HackdeckChat && typeof window.HackdeckChat.sendMessage === 'function') {
-        await window.HackdeckChat.sendMessage(content);
-      } else if (window.supabaseClient) {
-        const user = window.currentUser || (window.HackdeckBoard && window.HackdeckBoard.getUser());
-        const { error } = await window.supabaseClient.from('messages').insert([{
-          hackathon_id: hackathonId,
-          user_id: user.id,
-          content
-        }]);
-        if (error) throw error;
-      }
-      optimisticRow.querySelector('.sending-indicator')?.remove();
-    } catch (err) {
-      const ind = optimisticRow.querySelector('.sending-indicator');
-      if (ind) {
-        ind.textContent = 'Failed. Tap to retry';
-        ind.style.color = 'var(--danger)';
-        ind.style.cursor = 'pointer';
-        ind.onclick = () => {
-          textarea.value = content;
-          textarea.focus();
-        };
-      }
-    }
-  });
-
-  inputRow.appendChild(textarea);
-  inputRow.appendChild(sendBtn);
-
-  container.appendChild(messageFeedEl);
-  container.appendChild(newMsgPillEl);
-  container.appendChild(inputRow);
+  let cleanupViewport = null;
 
   activeChatSheet = openBottomSheet({
     title: '💬 Team Room',
     subtitle: 'Live Teammate Chat',
     contentHtml: container,
     className: 'team-chat-sheet-modal',
+    onMount: (controller) => {
+      // Ensure the sheet body has 0 padding and overflow hidden so only #teamChatMessages scrolls
+      if (controller.body) {
+        controller.body.style.setProperty('padding', '0', 'important');
+        controller.body.style.setProperty('margin', '0', 'important');
+        controller.body.style.setProperty('overflow', 'hidden', 'important');
+        controller.body.style.setProperty('display', 'flex', 'important');
+        controller.body.style.setProperty('flex-direction', 'column', 'important');
+        controller.body.style.setProperty('flex', '1 1 auto', 'important');
+        controller.body.style.setProperty('min-height', '0', 'important');
+        controller.body.style.setProperty('height', '100%', 'important');
+      }
+      if (controller.sheet) {
+        controller.sheet.style.setProperty('height', '92dvh', 'important');
+        controller.sheet.style.setProperty('max-height', '92dvh', 'important');
+        controller.sheet.style.setProperty('display', 'flex', 'important');
+        controller.sheet.style.setProperty('flex-direction', 'column', 'important');
+        controller.sheet.style.setProperty('overflow', 'hidden', 'important');
+      }
+      messagesEl.style.setProperty('touch-action', 'pan-y', 'important');
+      messagesEl.style.setProperty('overflow-y', 'scroll', 'important');
+      messagesEl.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+      messagesEl.style.setProperty('overscroll-behavior-y', 'contain', 'important');
+    },
     onClose: () => {
+      if (typeof cleanupViewport === 'function') {
+        cleanupViewport();
+        cleanupViewport = null;
+      }
+      // Put messages and form back into original desktop container
+      if (originalChatParent) {
+        if (originalChatNextSibling && originalChatNextSibling.parentNode === originalChatParent) {
+          originalChatParent.insertBefore(messagesEl, originalChatNextSibling);
+          originalChatParent.insertBefore(formEl, originalChatNextSibling);
+        } else {
+          originalChatParent.appendChild(messagesEl);
+          originalChatParent.appendChild(formEl);
+        }
+      }
       activeChatSheet = null;
-      messageFeedEl = null;
     }
   });
 
-  // Scroll to bottom immediately
+  // Scroll to latest message immediately
   setTimeout(() => {
-    scrollToBottom(messageFeedEl, false);
-  }, 50);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }, 100);
 
-  // Handle keyboard visualViewport adjustments
-  setupVisualViewportAdjustment(activeChatSheet.sheet);
-}
-
-function isScrolledNearBottom(el) {
-  if (!el) return true;
-  return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-}
-
-function showNewMessagesPill() {
-  if (newMsgPillEl) newMsgPillEl.style.display = 'block';
-}
-
-function scrollToBottom(el, smooth = false) {
-  if (!el) return;
-  requestAnimationFrame(() => {
-    if (smooth) {
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-    } else {
-      el.scrollTop = el.scrollHeight;
-    }
-  });
-}
-
-function renderChatMessages(feedEl) {
-  const desktopMessages = document.querySelectorAll('#teamChatMessages .chat-msg-row');
-
-  if (!desktopMessages || desktopMessages.length === 0) {
-    feedEl.innerHTML = `
-      <div style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
-        <div style="font-size: 32px; margin-bottom: 8px;">💬</div>
-        <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Team Room</div>
-        <div style="font-size: 13px;">Say hi to your team! Realtime chat is active for this board.</div>
-      </div>
-    `;
-    return;
+  // If messages are empty or loading, trigger loadExistingMessages if available
+  if ((messagesEl.children.length === 0 || messagesEl.querySelector('.chat-loading-spinner')) &&
+      window.HackdeckChat && typeof window.HackdeckChat.loadExistingMessages === 'function') {
+    window.HackdeckChat.loadExistingMessages();
   }
 
-  feedEl.innerHTML = '';
-  let lastSenderId = null;
-  let currentGroup = null;
-
-  desktopMessages.forEach((row) => {
-    const isMe = row.classList.contains('chat-msg-row-me');
-    const senderId = row.dataset.userId || (isMe ? 'me' : 'peer');
-    const content = row.querySelector('.chat-bubble')?.textContent || '';
-    const time = row.querySelector('.chat-timestamp')?.textContent || '';
-    const handle = row.querySelector('.chat-sender-username')?.textContent || '';
-
-    // Sender grouping
-    if (senderId !== lastSenderId) {
-      lastSenderId = senderId;
-      currentGroup = document.createElement('div');
-      currentGroup.className = `chat-bubble-group ${isMe ? 'msg-group-me' : 'msg-group-peer'}`;
-      currentGroup.style.display = 'flex';
-      currentGroup.style.flexDirection = 'column';
-      currentGroup.style.alignItems = isMe ? 'flex-end' : 'flex-start';
-      currentGroup.style.gap = '4px';
-
-      if (!isMe && handle) {
-        const authorLabel = document.createElement('span');
-        authorLabel.style.fontSize = '11px';
-        authorLabel.style.color = 'var(--text-muted)';
-        authorLabel.style.marginBottom = '2px';
-        authorLabel.textContent = handle;
-        currentGroup.appendChild(authorLabel);
-      }
-
-      feedEl.appendChild(currentGroup);
-    }
-
-    const bubble = document.createElement('div');
-    bubble.style.maxWidth = '82%';
-    bubble.style.padding = '10px 14px';
-    bubble.style.borderRadius = isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px';
-    bubble.style.background = isMe ? 'var(--text-primary)' : 'var(--bg-card)';
-    bubble.style.color = isMe ? '#171717' : 'var(--text-primary)';
-    bubble.style.border = isMe ? 'none' : '1px solid var(--border)';
-    bubble.style.fontSize = '14px';
-    bubble.style.lineHeight = '1.4';
-    bubble.style.wordBreak = 'break-word';
-    bubble.textContent = content;
-
-    if (currentGroup) currentGroup.appendChild(bubble);
-  });
-}
-
-function renderOptimisticBubble(content, feedEl) {
-  const group = document.createElement('div');
-  group.className = 'chat-bubble-group msg-group-me';
-  group.style.display = 'flex';
-  group.style.flexDirection = 'column';
-  group.style.alignItems = 'flex-end';
-  group.style.gap = '4px';
-
-  const bubble = document.createElement('div');
-  bubble.style.maxWidth = '82%';
-  bubble.style.padding = '10px 14px';
-  bubble.style.borderRadius = '16px 16px 4px 16px';
-  bubble.style.background = 'var(--text-primary)';
-  bubble.style.color = '#171717';
-  bubble.style.fontSize = '14px';
-  bubble.style.lineHeight = '1.4';
-  bubble.style.wordBreak = 'break-word';
-  bubble.textContent = content;
-
-  const sendingInd = document.createElement('span');
-  sendingInd.className = 'sending-indicator';
-  sendingInd.style.fontSize = '10px';
-  sendingInd.style.color = 'var(--text-muted)';
-  sendingInd.textContent = 'Sending...';
-
-  group.appendChild(bubble);
-  group.appendChild(sendingInd);
-  feedEl.appendChild(group);
-
-  return group;
+  // Keep input above mobile keyboard
+  cleanupViewport = setupVisualViewportAdjustment(activeChatSheet.sheet);
 }
 
 /**
  * Keep input above keyboard using window.visualViewport
  */
 function setupVisualViewportAdjustment(sheetEl) {
-  if (typeof window.visualViewport === 'undefined') return;
+  if (typeof window.visualViewport === 'undefined') return () => {};
 
   function onViewportResize() {
     const vp = window.visualViewport;
     const offset = window.innerHeight - vp.height;
     if (offset > 50) {
-      // Keyboard is open
       sheetEl.style.paddingBottom = `${offset}px`;
     } else {
       sheetEl.style.paddingBottom = '';
@@ -357,5 +192,8 @@ function setupVisualViewportAdjustment(sheetEl) {
   }
 
   window.visualViewport.addEventListener('resize', onViewportResize);
-  window.visualViewport.addEventListener('scroll', onViewportResize);
+
+  return () => {
+    window.visualViewport.removeEventListener('resize', onViewportResize);
+  };
 }

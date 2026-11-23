@@ -1502,6 +1502,10 @@ body.spectator-mode .kanban-card {
 }
 
 /* Kanban Task Card */
+.mobile-task-move-bar {
+  display: none;
+}
+
 .kanban-task-card {
   background-color: var(--bg-elevated);
   border: 1px solid var(--border);

@@ -109,10 +109,23 @@ function setupBoardUI(ctx) {
     }
   });
 
-  // 2. Setup Sticky Segmented Control [Task Board | Project Showcase]
+  // 2. Enhance Project Mission Card (3-line clamp, Show More, 44px buttons)
+  enhanceMissionCard(hackathon);
+
+  // 3. Enhance Kanban Board (Horizontal scroll-snap, chip strip, card move buttons, instant undo delete)
+  const kanbanEl = document.getElementById('kanbanBoard');
+  if (kanbanEl) {
+    initKanbanMobile({ kanbanEl });
+  }
+
+  // 4. Enhance Project Showcase Tab (Stacked cards, 16:9 video embeds, link rows, markdown docs)
+  enhanceShowcaseMobile(hackathon);
+
+  // 5. Setup Sticky Segmented Control [Task Board | Project Showcase]
+  // Runs after mission card, kanban board, and showcase box exist so switchTab initializes cleanly
   setupSegmentedControl(hackathon.id);
 
-  // 3. Setup Floating Team Chat Pill & Bottom Sheet (~92dvh)
+  // 6. Setup Floating Team Chat Pill & Bottom Sheet (~92dvh)
   initChatSheet({
     hackathonId: hackathon.id,
     user,
@@ -120,18 +133,6 @@ function setupBoardUI(ctx) {
     isMember,
     isSpectator
   });
-
-  // 4. Enhance Project Mission Card (3-line clamp, Show More, 44px buttons)
-  enhanceMissionCard(hackathon);
-
-  // 5. Enhance Kanban Board (Horizontal scroll-snap, chip strip, long press move, instant undo delete)
-  const kanbanEl = document.getElementById('kanbanBoard');
-  if (kanbanEl) {
-    initKanbanMobile({ kanbanEl });
-  }
-
-  // 6. Enhance Project Showcase Tab (Stacked cards, 16:9 video embeds, link rows, markdown docs)
-  enhanceShowcaseMobile(hackathon);
 }
 
 /**
@@ -184,16 +185,42 @@ function setupSegmentedControl(boardId) {
 
     sessionStorage.setItem(savedTabKey, targetTab);
 
+    // Toggle body classes for strict CSS view separation on mobile
+    document.body.classList.toggle('mobile-view-showcase', targetTab === 'showcase');
+    document.body.classList.toggle('mobile-view-tasks', targetTab === 'tasks');
+
+    const kanbanBoardEl = document.getElementById('kanbanBoard');
+    const kanbanStripEl = document.getElementById('kanbanMobileStrip');
+    const showcaseBoxEl = document.getElementById('projectShowcaseBox');
+    const missionBarEl = document.getElementById('lockedProjectDetailsBar');
+    const fabAddTask = document.getElementById('mobileFabAddTask');
+
     if (targetTab === 'tasks') {
-      if (kanbanBoardEl) kanbanBoardEl.style.display = '';
-      if (kanbanStripEl) kanbanStripEl.style.display = '';
-      if (showcaseBoxEl) showcaseBoxEl.classList.add('hidden');
-      if (fabAddTask) fabAddTask.style.display = 'flex';
+      if (missionBarEl) missionBarEl.style.removeProperty('display');
+      if (kanbanBoardEl) kanbanBoardEl.style.removeProperty('display');
+      if (kanbanStripEl) kanbanStripEl.style.removeProperty('display');
+      if (showcaseBoxEl) {
+        showcaseBoxEl.classList.add('hidden');
+        showcaseBoxEl.style.setProperty('display', 'none', 'important');
+      }
+      if (fabAddTask) fabAddTask.style.setProperty('display', 'flex', 'important');
+
+      // Sync desktop switcher tabs if present
+      document.getElementById('tabViewTasks')?.classList.add('active');
+      document.getElementById('tabViewShowcase')?.classList.remove('active');
     } else {
-      if (kanbanBoardEl) kanbanBoardEl.style.display = 'none';
-      if (kanbanStripEl) kanbanStripEl.style.display = 'none';
-      if (showcaseBoxEl) showcaseBoxEl.classList.remove('hidden');
-      if (fabAddTask) fabAddTask.style.display = 'none';
+      if (missionBarEl) missionBarEl.style.setProperty('display', 'none', 'important');
+      if (kanbanBoardEl) kanbanBoardEl.style.setProperty('display', 'none', 'important');
+      if (kanbanStripEl) kanbanStripEl.style.setProperty('display', 'none', 'important');
+      if (showcaseBoxEl) {
+        showcaseBoxEl.classList.remove('hidden');
+        showcaseBoxEl.style.setProperty('display', 'block', 'important');
+      }
+      if (fabAddTask) fabAddTask.style.setProperty('display', 'none', 'important');
+
+      // Sync desktop switcher tabs if present
+      document.getElementById('tabViewShowcase')?.classList.add('active');
+      document.getElementById('tabViewTasks')?.classList.remove('active');
     }
 
     // Restore scroll position of incoming tab

@@ -1058,6 +1058,15 @@
 
     // Re-attach card events (Drag & Drop, Delete)
     bindCardEvents();
+
+    // Mobile hook: enhance cards with move buttons if mobile handler exists
+    try {
+      if (window.HackdeckKanbanMobile && typeof window.HackdeckKanbanMobile.enhanceCards === 'function') {
+        window.HackdeckKanbanMobile.enhanceCards();
+      }
+    } catch (e) {
+      console.warn('Mobile enhanceCards error:', e);
+    }
   }
 
   /**

@@ -24,6 +24,18 @@ export function initKanbanMobile({ kanbanEl }) {
     if (idx !== -1) activeColumnIndex = idx;
   }
 
+  // Expose global hook for build.js to re-enhance cards after render
+  window.HackdeckKanbanMobile = {
+    enhanceCards: () => {
+      try {
+        enhanceKanbanCards(kanbanEl);
+        updateChipCounts();
+      } catch (err) {
+        console.warn('HackdeckKanbanMobile enhanceCards error:', err);
+      }
+    }
+  };
+
   // Setup Sticky Chip Strip above kanban
   setupKanbanChipStrip(kanbanEl);
 
@@ -56,11 +68,22 @@ function setupKanbanChipStrip(kanbanEl) {
 
   renderChipStrip(strip, kanbanEl);
 
-  // Observe task count mutations
-  const countObserver = new MutationObserver(() => {
-    renderChipStrip(strip, kanbanEl);
+  // Observe task count mutations on the count badges directly
+  const counters = kanbanEl.querySelectorAll('.kanban-task-count');
+  counters.forEach(counter => {
+    const observer = new MutationObserver(() => {
+      renderChipStrip(strip, kanbanEl);
+    });
+    observer.observe(counter, { childList: true, characterData: true, subtree: true });
   });
-  countObserver.observe(kanbanEl, { childList: true, subtree: true });
+}
+
+function updateChipCounts() {
+  const strip = document.getElementById('kanbanMobileStrip');
+  const kanbanEl = document.getElementById('kanbanBoard');
+  if (strip && kanbanEl) {
+    renderChipStrip(strip, kanbanEl);
+  }
 }
 
 function renderChipStrip(strip, kanbanEl) {
@@ -190,23 +213,27 @@ function openTaskSheetForColumn(defaultStatus) {
  * - Delete button: instant optimistic removal + 5s Undo toast
  */
 export function enhanceKanbanCards(kanbanEl) {
+  if (!kanbanEl) return;
   const cards = kanbanEl.querySelectorAll('.kanban-task-card, .kanban-card-preview');
 
   cards.forEach(card => {
-    if (card._mobileEnhanced) return;
-    card._mobileEnhanced = true;
-
     const taskId = card.getAttribute('data-task-id') || card.id?.replace('task-', '');
     if (!taskId) return;
 
-    // 1. Tap anywhere on card to edit (ignore if dragging to scroll)
+    // 1. ALWAYS attach/refresh mobile move action buttons regardless of event listener state
+    attachTaskMoveButtons(card, taskId);
+
+    if (card._mobileEnhanced) return;
+    card._mobileEnhanced = true;
+
+    // 2. Tap anywhere on card to edit (ignore if dragging to scroll)
     card.addEventListener('click', (e) => {
       if (moved) {
         moved = false;
         return;
       }
-      // Ignore if clicking action buttons inside card
-      if (e.target.closest('.btn-task-action') || e.target.closest('.btn-delete-task')) return;
+      // Ignore if clicking action buttons or move buttons inside card
+      if (e.target.closest('.btn-task-action') || e.target.closest('.btn-delete-task') || e.target.closest('.btn-task-move') || e.target.closest('.mobile-task-move-bar')) return;
       haptic(10);
       if (window.HackdeckBuild && typeof window.HackdeckBuild.openEditTaskModal === 'function') {
         window.HackdeckBuild.openEditTaskModal(taskId);
@@ -216,7 +243,7 @@ export function enhanceKanbanCards(kanbanEl) {
       }
     });
 
-    // 2. Long press (400ms, cancel if moved > 8px)
+    // 3. Long press (400ms, cancel if moved > 8px)
     let pressTimer = null;
     let startX = 0;
     let startY = 0;
@@ -262,7 +289,7 @@ export function enhanceKanbanCards(kanbanEl) {
       e.preventDefault(); // Block native context menu on long-press
     });
 
-    // 3. Delete Task Button: Instant removal + 5s Undo Toast
+    // 4. Delete Task Button: Instant removal + 5s Undo Toast
     const deleteBtn = card.querySelector('.btn-delete-task, .btn-trigger-delete-task');
     if (deleteBtn) {
       deleteBtn.addEventListener('click', (e) => {
@@ -272,6 +299,98 @@ export function enhanceKanbanCards(kanbanEl) {
       });
     }
   });
+}
+
+function attachTaskMoveButtons(card, taskId) {
+  if (!card) return;
+
+  let moveBar = card.querySelector('.mobile-task-move-bar');
+  if (moveBar && moveBar.children.length > 0) {
+    return;
+  }
+
+  if (!moveBar) {
+    moveBar = document.createElement('div');
+    moveBar.className = 'mobile-task-move-bar';
+    card.appendChild(moveBar);
+  }
+
+  const currentStatus = card.getAttribute('data-status') ||
+    card.closest('.kanban-column')?.getAttribute('data-status') ||
+    card.closest('.kanban-tasks-list')?.id?.replace('tasks-', '') ||
+    'todo';
+
+  const colIdx = Math.max(0, COLUMNS.findIndex(c => c.key === currentStatus));
+
+  moveBar.innerHTML = '';
+
+  // 1. Previous column button (if colIdx > 0)
+  if (colIdx > 0) {
+    const prevCol = COLUMNS[colIdx - 1];
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'btn-task-move btn-move-prev';
+    prevBtn.setAttribute('data-target-status', prevCol.key);
+    prevBtn.setAttribute('aria-label', `Move to ${prevCol.label}`);
+    const prevLabel = colIdx === 3 ? 'Reopen' : prevCol.label;
+    prevBtn.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      <span>${prevLabel}</span>
+    `;
+    prevBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      haptic(10);
+      await moveTaskToColumn(taskId, prevCol.key, prevCol.label);
+    });
+    moveBar.appendChild(prevBtn);
+  }
+
+  // 2. Next column button (if colIdx < COLUMNS.length - 1)
+  if (colIdx < COLUMNS.length - 1) {
+    const nextCol = COLUMNS[colIdx + 1];
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'btn-task-move btn-move-next';
+    nextBtn.setAttribute('data-target-status', nextCol.key);
+    nextBtn.setAttribute('aria-label', `Move to ${nextCol.label}`);
+    const nextLabel = colIdx === 0 ? 'In Progress' : (colIdx === 2 ? 'Done' : nextCol.label);
+    nextBtn.innerHTML = `
+      <span>${nextLabel}</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    `;
+    nextBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      haptic(10);
+      await moveTaskToColumn(taskId, nextCol.key, nextCol.label);
+    });
+    moveBar.appendChild(nextBtn);
+  }
+
+  // 3. Middle / Overflow "Move..." picker sheet button
+  const pickerBtn = document.createElement('button');
+  pickerBtn.type = 'button';
+  pickerBtn.className = 'btn-task-move btn-move-picker';
+  pickerBtn.setAttribute('aria-label', 'Open column selector');
+  pickerBtn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline></svg>
+    <span>Move...</span>
+  `;
+  pickerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    haptic(10);
+    openMoveTaskSheet(taskId, card);
+  });
+  moveBar.appendChild(pickerBtn);
+}
+
+async function moveTaskToColumn(taskId, targetKey, targetLabel) {
+  if (window.HackdeckBuild && typeof window.HackdeckBuild.moveTaskToStatus === 'function') {
+    await window.HackdeckBuild.moveTaskToStatus(taskId, targetKey);
+    showToast(`Task moved to ${targetLabel}`, 'success');
+  }
 }
 
 /**

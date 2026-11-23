@@ -21,6 +21,7 @@ export function setupPullToRefresh(container, onRefresh) {
 
   function onTouchStart(e) {
     if (isRefreshing || e.touches.length !== 1) return;
+    if (document.body.classList.contains('sheet-open') || e.target.closest('.mobile-bottom-sheet-overlay, .modal-overlay, .mobile-bottom-sheet')) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     isPulling = false;
@@ -29,6 +30,14 @@ export function setupPullToRefresh(container, onRefresh) {
 
   function onTouchMove(e) {
     if (isRefreshing || e.touches.length !== 1) return;
+    if (document.body.classList.contains('sheet-open') || e.target.closest('.mobile-bottom-sheet-overlay, .modal-overlay, .mobile-bottom-sheet')) {
+      if (isPulling) {
+        isPulling = false;
+        indicator.classList.remove('visible', 'pulling');
+        indicator.style.transform = '';
+      }
+      return;
+    }
     const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
     // Only allow pull-to-refresh when at the very top of the page
     if (scrollTop > 0) {
