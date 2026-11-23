@@ -365,10 +365,10 @@
                 <label class="form-label" for="inputDemoUrl">Live Demo URL</label>
                 <input type="url" id="inputDemoUrl" class="form-input form-input-standalone form-input-sm" placeholder="https://myproject.vercel.app">
               </div>
-              <div class="edit-links-actions">
-                <button id="btnSaveProjectUrls" class="btn btn-primary btn-sm">Save Links</button>
-                <button id="btnCancelEditUrls" class="btn btn-outline btn-sm">Cancel</button>
-              </div>
+            </div>
+            <div class="edit-links-actions">
+              <button id="btnCancelEditUrls" class="btn btn-outline btn-sm">Cancel</button>
+              <button id="btnSaveProjectUrls" class="btn btn-primary btn-sm">Save Links</button>
             </div>
           </div>
         </div>
@@ -451,10 +451,10 @@
                       <label class="form-label" for="inputShowcaseDemoUrl">Live Demo URL</label>
                       <input type="url" id="inputShowcaseDemoUrl" class="form-input form-input-standalone form-input-sm" placeholder="https://myproject.vercel.app">
                     </div>
-                    <div class="edit-links-actions">
-                      <button type="button" id="btnSaveDeliverables" class="btn btn-primary btn-sm">Save Links</button>
-                      <button type="button" id="btnCancelDeliverables" class="btn btn-outline btn-sm">Cancel</button>
-                    </div>
+                  </div>
+                  <div class="edit-links-actions">
+                    <button type="button" id="btnCancelDeliverables" class="btn btn-outline btn-sm">Cancel</button>
+                    <button type="button" id="btnSaveDeliverables" class="btn btn-primary btn-sm">Save Links</button>
                   </div>
                 </div>
               </div>
@@ -481,15 +481,15 @@
                 <!-- Inline Edit Box for Videos -->
                 <div id="editVideosBar" class="showcase-card-edit-bar hidden">
                   <div class="dynamic-list-header">
-                    <label class="form-label" style="margin: 0;">YouTube / Video Link(s)</label>
+                    <span class="showcase-card-edit-title">YouTube / Video Link(s)</span>
                     <button type="button" id="btnAddYouTubeRow" class="btn btn-outline btn-xs">+ Add Video</button>
                   </div>
                   <div id="editYouTubeRowsContainer" class="dynamic-rows-container">
                     <!-- Dynamic rows inserted here -->
                   </div>
-                  <div class="edit-links-actions" style="margin-top: var(--space-8); justify-content: flex-end;">
-                    <button type="button" id="btnSaveVideos" class="btn btn-primary btn-sm">Save Videos</button>
+                  <div class="edit-links-actions">
                     <button type="button" id="btnCancelVideos" class="btn btn-outline btn-sm">Cancel</button>
+                    <button type="button" id="btnSaveVideos" class="btn btn-primary btn-sm">Save Videos</button>
                   </div>
                 </div>
               </div>
@@ -516,15 +516,15 @@
                 <!-- Inline Edit Box for Resources -->
                 <div id="editResourcesBar" class="showcase-card-edit-bar hidden">
                   <div class="dynamic-list-header">
-                    <label class="form-label" style="margin: 0;">Resource Link(s) (Figma, Slide Deck, etc.)</label>
+                    <span class="showcase-card-edit-title">Resource Link(s)</span>
                     <button type="button" id="btnAddResourceRow" class="btn btn-outline btn-xs">+ Add Resource</button>
                   </div>
                   <div id="editResourceRowsContainer" class="dynamic-rows-container">
                     <!-- Dynamic rows inserted here -->
                   </div>
-                  <div class="edit-links-actions" style="margin-top: var(--space-8); justify-content: flex-end;">
-                    <button type="button" id="btnSaveResources" class="btn btn-primary btn-sm">Save Resources</button>
+                  <div class="edit-links-actions">
                     <button type="button" id="btnCancelResources" class="btn btn-outline btn-sm">Cancel</button>
+                    <button type="button" id="btnSaveResources" class="btn btn-primary btn-sm">Save Resources</button>
                   </div>
                 </div>
               </div>
@@ -553,7 +553,7 @@
                 <!-- Inline Edit Box for Documentation -->
                 <div id="editDocsBar" class="showcase-card-edit-bar hidden">
                   <div class="markdown-tabs-header">
-                    <label class="form-label" style="margin: 0;">Project Description (Markdown)</label>
+                    <span class="showcase-card-edit-title">Project Description (Markdown)</span>
                     <div class="markdown-tab-buttons">
                       <button type="button" id="tabWriteMd" class="btn-tab-toggle active">Write</button>
                       <button type="button" id="tabPreviewMd" class="btn-tab-toggle">Preview</button>
@@ -567,9 +567,9 @@
                       <!-- Live preview rendered here -->
                     </div>
                   </div>
-                  <div class="edit-links-actions" style="margin-top: var(--space-8); justify-content: flex-end;">
-                    <button type="button" id="btnSaveDocs" class="btn btn-primary btn-sm">Save Docs</button>
+                  <div class="edit-links-actions">
                     <button type="button" id="btnCancelDocs" class="btn btn-outline btn-sm">Cancel</button>
+                    <button type="button" id="btnSaveDocs" class="btn btn-primary btn-sm">Save Docs</button>
                   </div>
                 </div>
               </div>

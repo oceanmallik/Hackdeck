@@ -1272,28 +1272,45 @@ body.spectator-mode .kanban-card {
 
 .leader-link-edit-bar {
   margin-top: var(--space-16);
-  padding: var(--space-16);
+  padding: var(--space-20);
   background-color: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
 }
 
 .edit-links-form-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-12);
+  align-items: flex-start;
+  gap: var(--space-16);
 }
 
 .edit-link-field {
   flex: 1;
-  min-width: 200px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.edit-link-field .form-label {
+  margin-bottom: 0;
+  font-size: var(--font-size-12);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .edit-links-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
+  justify-content: flex-end;
+  gap: var(--space-10);
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--border);
+  width: 100%;
 }
 
 /* ==========================================================================
@@ -1995,14 +2012,14 @@ body.spectator-mode .kanban-card {
 }
 
 .showcase-card-edit-bar {
-  margin-top: var(--space-12);
-  padding: var(--space-14) var(--space-16);
+  margin-top: var(--space-16);
+  padding: var(--space-20);
   background-color: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
+  gap: var(--space-16);
   transition: all var(--transition-fast);
 }
 
@@ -2010,17 +2027,45 @@ body.spectator-mode .kanban-card {
   display: none !important;
 }
 
+.showcase-card-edit-title {
+  font-size: var(--font-size-12);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.dynamic-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-8);
+  border-bottom: 1px dashed var(--border);
+  margin-bottom: var(--space-4);
+}
+
+.dynamic-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  margin-top: var(--space-4);
+}
+
 .dynamic-item-row {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
+  gap: var(--space-10);
   width: 100%;
 }
 
+.dynamic-item-row .form-input {
+  min-width: 0;
+}
+
 .btn-remove-dynamic-row {
-  width: 28px;
-  height: 28px;
-  background: transparent;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
@@ -2037,7 +2082,7 @@ body.spectator-mode .kanban-card {
 .btn-remove-dynamic-row:hover {
   color: var(--danger);
   border-color: var(--danger-border);
-  background-color: rgba(239, 68, 68, 0.08);
+  background-color: rgba(239, 68, 68, 0.12);
 }
 
 /* Markdown Tab Toggle (Write vs Preview) */
