@@ -1444,11 +1444,13 @@
   /**
    * Delete Task
    */
-  async function handleDeleteTask(taskId) {
+  async function handleDeleteTask(taskId, skipConfirm = false) {
     if (!window.supabaseClient || !isMember || isSpectator) return;
 
-    const confirmed = window.confirm('Are you sure you want to delete this task?');
-    if (!confirmed) return;
+    if (!skipConfirm) {
+      const confirmed = window.confirm('Are you sure you want to delete this task?');
+      if (!confirmed) return;
+    }
 
     try {
       const { error } = await window.supabaseClient
@@ -1817,6 +1819,16 @@
         isSpectator: window.HackdeckBoard.isSpectator()
       });
     }
+
+    // Expose Build context for mobile layer
+    window.HackdeckBuild = {
+      loadTasks,
+      moveTaskToStatus,
+      deleteTask: (id, skipConfirm = false) => handleDeleteTask(id, skipConfirm),
+      getTasks: () => cachedTasks,
+      openCreateTaskModal,
+      openEditTaskModal
+    };
   }
 
   // Run on DOM ready

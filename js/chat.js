@@ -916,6 +916,17 @@
         isSpectator: window.HackdeckBoard.isSpectator()
       });
     }
+
+    // Expose Chat context for mobile layer
+    window.HackdeckChat = {
+      sendMessage: async (content) => {
+        if (!chatMessageInput) return;
+        chatMessageInput.value = content;
+        await handleSendMessage();
+      },
+      loadExistingMessages,
+      getProfileCache: () => profileCache
+    };
   }
 
   // Run on DOM ready

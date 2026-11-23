@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <title>Hackdeck | A Notepad for Devs</title>
   <meta name="description" content="Hackdeck | A Notepad for Devs. Draft your projects, plan sprint tasks, chat with teammates, and race against the hackathon countdown timer.">
@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/mobile.css">
   
   <!-- Supabase JS v2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -730,5 +731,12 @@
   <script src="js/auth.js"></script>
   <script src="js/invitations.js"></script>
   <script src="js/dashboard.js"></script>
+
+  <!-- Mobile Layer Loader -->
+  <script type="module">
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      import('./js/mobile/indexMobile.js');
+    }
+  </script>
 </body>
 </html>

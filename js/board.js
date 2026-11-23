@@ -273,17 +273,19 @@
   /**
    * Leader "Mark as Submitted" Action
    */
-  async function markProjectAsSubmitted() {
+  async function markProjectAsSubmitted(skipConfirm = false) {
     if (!isLeader || !currentHackathon) return;
 
-    const confirmed = window.confirm(
-      'Mark this project as finished and submit for judging?\n\n' +
-      '• Your Project Showcase & Documentation will be displayed prominently at the top for judges and visitors.\n' +
-      '• The Kanban Task Board will be locked in read-only archive mode.\n\n' +
-      'You can reopen the build phase at any time if last-minute adjustments are needed before the deadline.'
-    );
+    if (!skipConfirm) {
+      const confirmed = window.confirm(
+        'Mark this project as finished and submit for judging?\n\n' +
+        '• Your Project Showcase & Documentation will be displayed prominently at the top for judges and visitors.\n' +
+        '• The Kanban Task Board will be locked in read-only archive mode.\n\n' +
+        'You can reopen the build phase at any time if last-minute adjustments are needed before the deadline.'
+      );
 
-    if (!confirmed) return;
+      if (!confirmed) return;
+    }
 
     if (btnMarkSubmitted) {
       btnMarkSubmitted.disabled = true;
@@ -330,16 +332,18 @@
   /**
    * Leader "Reopen Build Phase" Action
    */
-  async function reopenBuildPhase() {
+  async function reopenBuildPhase(skipConfirm = false) {
     if (!isLeader || !currentHackathon) return;
 
-    const confirmed = window.confirm(
-      'Reopen the Build Phase?\n\n' +
-      '• The Kanban sprint task board will be unlocked for teammates to make last-minute edits.\n' +
-      '• You can mark as submitted again once deliverables are finalized.'
-    );
+    if (!skipConfirm) {
+      const confirmed = window.confirm(
+        'Reopen the Build Phase?\n\n' +
+        '• The Kanban sprint task board will be unlocked for teammates to make last-minute edits.\n' +
+        '• You can mark as submitted again once deliverables are finalized.'
+      );
 
-    if (!confirmed) return;
+      if (!confirmed) return;
+    }
 
     if (btnReopenBuild) {
       btnReopenBuild.disabled = true;
@@ -495,7 +499,7 @@
   /**
    * Delete Hackathon (Leader Only)
    */
-  async function deleteCurrentHackathon() {
+  async function deleteCurrentHackathon(skipConfirm = false) {
     if (!isLeader || !currentHackathon) {
       if (typeof window.showToast === 'function') {
         window.showToast('Only team leaders can delete this hackathon workspace.', 'error');
@@ -504,8 +508,10 @@
     }
 
     const title = currentHackathon.title || 'this hackathon';
-    const confirmed = window.confirm(`Are you sure you want to delete "${title}"? This will permanently remove the entire hackathon workspace, tasks, brainstorm ideas, and team chat.`);
-    if (!confirmed) return;
+    if (!skipConfirm) {
+      const confirmed = window.confirm(`Are you sure you want to delete "${title}"? This will permanently remove the entire hackathon workspace, tasks, brainstorm ideas, and team chat.`);
+      if (!confirmed) return;
+    }
 
     if (btnDeleteBoard) {
       btnDeleteBoard.disabled = true;
@@ -779,7 +785,22 @@
       isLeader: () => isLeader,
       isMember: () => isMember,
       isSpectator: () => isSpectator,
-      refreshMembership: () => verifyMembershipAndApplyUI(currentUser)
+      refreshMembership: () => verifyMembershipAndApplyUI(currentUser),
+      markSubmitted: (skipConfirm = false) => markProjectAsSubmitted(skipConfirm),
+      reopenBuild: (skipConfirm = false) => reopenBuildPhase(skipConfirm),
+      deleteBoard: (skipConfirm = false) => deleteCurrentHackathon(skipConfirm),
+      switchPhase: async (newPhase) => {
+        if (!window.supabaseClient || !currentHackathon) return;
+        await window.supabaseClient.from('hackathons').update({ phase: newPhase }).eq('id', currentHackathon.id);
+        currentHackathon.phase = newPhase;
+        applyPhaseUI(newPhase);
+      },
+      togglePrivacy: async (newIsPublic) => {
+        if (!window.supabaseClient || !currentHackathon) return;
+        await window.supabaseClient.from('hackathons').update({ is_public: newIsPublic }).eq('id', currentHackathon.id);
+        currentHackathon.is_public = newIsPublic;
+        updatePrivacyUI(newIsPublic);
+      }
     };
 
     // Dispatch board-ready event so dependent modules (brainstorm, build, chat) update instantly

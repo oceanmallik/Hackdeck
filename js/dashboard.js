@@ -1407,6 +1407,7 @@
 
   // Export refresh function globally if needed
   window.loadMyHackathons = loadMyHackathons;
+  window.HackdeckDashboard = { loadMyHackathons, getHackathons: () => cachedHackathons };
 
   // Run on DOM ready
   if (document.readyState === 'loading') {

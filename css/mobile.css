@@ -1,0 +1,1709 @@
+/* css/mobile.css - Mobile Layer for Hackdeck (A Notepad for Devs)
+   Target: 360px - 430px (applies on screens <= 768px)
+   Reuses existing design tokens, CSS variables, and components.
+*/
+
+@media (max-width: 768px) {
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --min-touch-target: 44px;
+  }
+
+  /* Global Layout Rules & Touch Metrics */
+  html {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-text-size-adjust: 100%;
+    width: 100%;
+    height: 100%;
+  }
+
+  body {
+    overflow-x: hidden;
+    overflow-y: visible;
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+    padding-bottom: var(--safe-bottom);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.sheet-open {
+    overflow: hidden !important;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+
+  /* Single Column Container */
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Touch Feedback: active state, manipulation, user-select */
+  button,
+  .btn,
+  .filter-chip,
+  .hk-open-btn,
+  .hk-delete-btn,
+  .view-switch-btn,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:active,
+  .btn:active,
+  .filter-chip:active,
+  .hk-open-btn:active,
+  .hk-delete-btn:active,
+  .view-switch-btn:active,
+  .btn-close-modal:active,
+  [role="button"]:active {
+    opacity: 0.75;
+    transform: scale(0.97);
+    transition: transform 100ms ease, opacity 100ms ease;
+  }
+
+  /* Disable hover effects on mobile chrome */
+  .navbar-inner,
+  .board-header,
+  .board-header-inner,
+  .section-filters,
+  .build-view-switcher,
+  .kanban-mobile-strip {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Minimum 44x44 Touch Target */
+  button,
+  .btn,
+  .btn-sm,
+  .btn-xs,
+  .btn-close-modal,
+  .hk-delete-btn,
+  .btn-task-action,
+  .btn-col-add-task {
+    min-height: var(--min-touch-target);
+    box-sizing: border-box;
+  }
+
+  .hk-delete-btn,
+  .btn-close-modal,
+  .btn-task-action,
+  .btn-col-add-task {
+    min-width: var(--min-touch-target);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* =========================================================================
+     TOP BARS
+     ========================================================================= */
+
+  /* Screen 1: Dashboard Top Bar (56px, Sticky) */
+  .navbar {
+    height: 56px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background-color: rgba(23, 23, 23, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding-top: var(--safe-top) !important;
+    box-sizing: content-box !important;
+  }
+
+  .navbar-inner {
+    height: 56px !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .brand-logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+  }
+
+  .brand-logo .brand-badge {
+    display: none !important;
+  }
+
+  /* Right avatar trigger button */
+  .auth-signed-in-nav {
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .auth-signed-in-nav #btnSignOut {
+    display: none !important; /* Moved to avatar bottom sheet */
+  }
+
+  .user-profile-badge {
+    cursor: pointer !important;
+    padding: 2px !important;
+    background: transparent !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
+    justify-content: center !important;
+  }
+
+  .user-profile-badge .user-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background-color: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  .user-profile-badge .user-handle {
+    display: none !important; /* Visible inside avatar sheet */
+  }
+
+  /* Screen 2: Board Workspace Top Bar (56px, Sticky) */
+  .board-header {
+    height: 56px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background-color: var(--bg-page) !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding-top: var(--safe-top) !important;
+    box-sizing: content-box !important;
+  }
+
+  .board-header-inner {
+    height: 56px !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .board-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .board-back-link {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .board-back-link span {
+    display: none !important; /* Back chevron only */
+  }
+
+  .board-header-slash {
+    display: none !important;
+  }
+
+  .board-title-group {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .board-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 180px !important;
+    margin: 0 !important;
+  }
+
+  .board-title-group .badge-event-url,
+  .board-title-group .badge-phase,
+  .board-title-group .btn-emerald,
+  .board-title-group #btnReopenBuild,
+  .board-title-group .badge-spectator {
+    display: none !important; /* Handled in status strip row 2 or overflow */
+  }
+
+  .board-header-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .board-header-right #deadlineCountdown,
+  .board-header-right #leaderControlsContainer,
+  .board-header-right #boardAuthBadge {
+    display: none !important; /* Handled in status strip and overflow */
+  }
+
+  .mobile-overflow-btn {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+  }
+
+  /* Status Strip Row 2 (48px, Sticky) */
+  .mobile-status-strip {
+    height: 48px !important;
+    position: sticky !important;
+    top: calc(56px + var(--safe-top)) !important;
+    z-index: 99 !important;
+    background: var(--bg-card) !important;
+    border-bottom: 1px solid var(--border) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 16px !important;
+    box-sizing: border-box !important;
+    gap: 8px !important;
+  }
+
+  .status-strip-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .status-strip-phase-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 3px 8px !important;
+    border-radius: 9999px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    border: 1px solid var(--border) !important;
+    background: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .status-strip-phase-pill.phase-brainstorm {
+    background: rgba(245, 165, 36, 0.12) !important;
+    border-color: rgba(245, 165, 36, 0.3) !important;
+    color: #f5a524 !important;
+  }
+
+  .status-strip-phase-pill.phase-build {
+    background: rgba(62, 207, 142, 0.12) !important;
+    border-color: rgba(62, 207, 142, 0.3) !important;
+    color: var(--accent) !important;
+  }
+
+  .status-strip-phase-pill.phase-submitted {
+    background: rgba(16, 185, 129, 0.16) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+    color: #10b981 !important;
+  }
+
+  .status-strip-timer {
+    font-family: var(--font-mono) !important;
+    font-variant-numeric: tabular-nums !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    white-space: nowrap !important;
+  }
+
+  .status-strip-timer.timer-warning {
+    color: #f5a524 !important;
+  }
+
+  .status-strip-timer.timer-danger {
+    color: var(--danger) !important;
+  }
+
+  .status-strip-btn-submit {
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border: none !important;
+  }
+
+  .status-strip-btn-submit:disabled {
+    background: var(--bg-elevated) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid var(--border) !important;
+    opacity: 0.8 !important;
+  }
+
+  /* Segmented Control [Task Board | Project Showcase] (44px, Sticky) */
+  .mobile-segmented-control {
+    position: sticky !important;
+    top: calc(104px + var(--safe-top)) !important;
+    z-index: 98 !important;
+    background: var(--bg-page) !important;
+    border-bottom: 1px solid var(--border) !important;
+    display: flex !important;
+    padding: 4px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 8px !important;
+  }
+
+  .mobile-segment-tab {
+    flex: 1 1 50% !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    cursor: pointer !important;
+  }
+
+  .mobile-segment-tab.active {
+    background: var(--bg-elevated) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+  }
+
+  /* Sticky Chip Strip above Kanban */
+  .kanban-mobile-strip {
+    position: sticky !important;
+    top: calc(148px + var(--safe-top)) !important;
+    z-index: 97 !important;
+    background: var(--bg-page) !important;
+    padding: 8px 16px !important;
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .kanban-mobile-strip::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .kanban-mobile-chip {
+    flex-shrink: 0 !important;
+    height: 34px !important;
+    padding: 0 12px !important;
+    border-radius: 9999px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    border: 1px solid var(--border) !important;
+    background: var(--bg-card) !important;
+    color: var(--text-secondary) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+  }
+
+  .kanban-mobile-chip.active {
+    background: var(--bg-elevated) !important;
+    border-color: var(--accent) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+  }
+
+  .kanban-mobile-chip .chip-count {
+    background: var(--border) !important;
+    color: var(--text-primary) !important;
+    border-radius: 9999px !important;
+    padding: 1px 6px !important;
+    font-size: 11px !important;
+  }
+
+  /* =========================================================================
+     SCREEN 1: DASHBOARD CONTENT
+     ========================================================================= */
+
+  /* Welcome Block */
+  .dashboard-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .dashboard-user-greeting {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .dashboard-avatar-large {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+  }
+
+  .dashboard-heading {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 250px !important;
+    margin: 0 !important;
+  }
+
+  .dashboard-subheading {
+    font-size: 13px !important;
+    color: var(--text-muted) !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-top: 2px !important;
+  }
+
+  .dashboard-header-actions {
+    width: 100% !important;
+  }
+
+  .dashboard-header-actions .btn-primary {
+    width: 100% !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+  }
+
+  /* Stats: 2x2 Grid */
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .stat-card {
+    padding: 14px !important;
+    border-radius: 12px !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 86px !important;
+    position: relative !important;
+  }
+
+  .stat-card .stat-icon {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--text-muted) !important;
+  }
+
+  .stat-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: var(--text-muted) !important;
+    margin-bottom: 8px !important;
+  }
+
+  .stat-value {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    font-family: var(--font-mono) !important;
+    color: var(--text-primary) !important;
+    line-height: 1 !important;
+  }
+
+  /* My Hackathons Heading & Filter Chips */
+  .section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .section-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+  }
+
+  .section-subtitle {
+    font-size: 13px !important;
+    color: var(--text-muted) !important;
+  }
+
+  .section-filters {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    gap: 8px !important;
+    padding-bottom: 4px !important;
+    scrollbar-width: none !important;
+  }
+
+  .section-filters::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .filter-chip {
+    flex-shrink: 0 !important;
+    height: 36px !important;
+    padding: 0 16px !important;
+    border-radius: 9999px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    border: 1px solid var(--border) !important;
+    background: var(--bg-card) !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .filter-chip.active {
+    background: var(--text-primary) !important;
+    color: #171717 !important;
+    font-weight: 600 !important;
+    border-color: var(--text-primary) !important;
+  }
+
+  /* Hackathon Card (Full Width) */
+  .boards-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    margin-bottom: 40px !important;
+  }
+
+  .hk-card-component.white-hackathon-card {
+    width: 100% !important;
+    padding: 16px !important;
+    border-radius: 16px !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    cursor: pointer !important;
+  }
+
+  .hk-card-top-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .hk-card-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    line-height: 1.3 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+  }
+
+  /* 4-Segment Progress Bar */
+  .hk-phase-track {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+    margin: 4px 0 !important;
+  }
+
+  .hk-phase-segment {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .hk-phase-bar {
+    height: 4px !important;
+    background: var(--border) !important;
+    border-radius: 2px !important;
+    overflow: hidden !important;
+  }
+
+  .hk-phase-label {
+    font-size: 10px !important;
+    color: var(--text-muted) !important;
+    text-align: center !important;
+  }
+
+  .hk-phase-label.is-current {
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+  }
+
+  /* Time & Countdown Row */
+  .hk-time-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+  }
+
+  .hk-countdown-value {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    font-family: var(--font-mono) !important;
+    font-variant-numeric: tabular-nums !important;
+    color: var(--text-primary) !important;
+    line-height: 1.1 !important;
+  }
+
+  .hk-countdown-sub {
+    font-size: 11px !important;
+    color: var(--text-muted) !important;
+    margin-top: 2px !important;
+  }
+
+  .hk-team-avatars {
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .hk-avatar-circle {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50% !important;
+    margin-left: -6px !important;
+    border: 2px solid var(--bg-card) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+  }
+
+  /* Info block */
+  .hk-info-block {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border) !important;
+    font-size: 12px !important;
+  }
+
+  .hk-devpost-link {
+    font-size: 12px !important;
+    color: var(--accent) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+  }
+
+  .hk-deadline-label {
+    font-size: 12px !important;
+    color: var(--text-muted) !important;
+  }
+
+  /* Card Bottom Action Row */
+  .hk-card-actions-row {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+
+  .hk-open-btn {
+    flex: 1 1 auto !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--text-primary) !important;
+    color: #171717 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    gap: 6px !important;
+  }
+
+  .hk-delete-btn {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--danger) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+
+  /* Dashed + New Hackathon Card */
+  .create-hackathon-shortcut-card {
+    height: 120px !important;
+    min-height: 120px !important;
+    width: 100% !important;
+    border: 2px dashed var(--border) !important;
+    border-radius: 16px !important;
+    background: transparent !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+  }
+
+  /* =========================================================================
+     SCREEN 2: BOARD WORKSPACE CONTENT
+     ========================================================================= */
+
+  /* Workspace Main container */
+  .board-main-container {
+    padding-bottom: calc(96px + var(--safe-bottom)) !important;
+  }
+
+  /* Floating Buttons */
+  .mobile-fab-add-task {
+    position: fixed !important;
+    bottom: calc(var(--safe-bottom) + 20px) !important;
+    right: 16px !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background: var(--accent) !important;
+    color: #171717 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 26px !important;
+    font-weight: 400 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    z-index: 90 !important;
+    cursor: pointer !important;
+  }
+
+  .mobile-chat-pill {
+    position: fixed !important;
+    bottom: calc(var(--safe-bottom) + 20px) !important;
+    left: 16px !important;
+    height: 44px !important;
+    padding: 0 16px !important;
+    border-radius: 9999px !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+    z-index: 90 !important;
+    cursor: pointer !important;
+  }
+
+  .mobile-chat-pill .unread-dot {
+    width: 8px !important;
+    height: 8px !important;
+    background: var(--accent) !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+  }
+
+  /* Hide desktop chat elements */
+  .team-chat-trigger-btn,
+  .team-chat-popup {
+    display: none !important;
+  }
+
+  /* Task Board Tab (js/build.js) */
+  .phase-header-bar {
+    display: none !important; /* Replaced by sticky mobile strips */
+  }
+
+  /* 1. Project Mission Card */
+  .locked-project-bar {
+    margin: 16px !important;
+    padding: 16px !important;
+    border-radius: 14px !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  .locked-project-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .locked-project-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+  }
+
+  .locked-project-summary {
+    font-size: 13px !important;
+    color: var(--text-body) !important;
+    line-height: 1.4 !important;
+    margin: 8px 0 !important;
+  }
+
+  .locked-project-summary.clamped {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  .btn-show-more-summary {
+    background: none !important;
+    border: none !important;
+    color: var(--accent) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    padding: 4px 0 !important;
+    cursor: pointer !important;
+    display: block !important;
+  }
+
+  .mission-card-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-top: 12px !important;
+    width: 100% !important;
+  }
+
+  .mission-card-buttons .btn {
+    height: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+  }
+
+  /* 2. Kanban Columns: Horizontal Scroll-Snap */
+  .kanban-board {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    gap: 12px !important;
+    padding: 12px 16px 24px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    scrollbar-width: none !important;
+  }
+
+  .kanban-board::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .kanban-column {
+    flex: 0 0 88% !important;
+    min-width: 88% !important;
+    max-width: 88% !important;
+    scroll-snap-align: center !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    padding: 14px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .kanban-column-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 12px !important;
+  }
+
+  .kanban-column-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+
+  .kanban-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .kanban-task-count {
+    background: var(--border) !important;
+    color: var(--text-primary) !important;
+    padding: 2px 7px !important;
+    border-radius: 9999px !important;
+    font-size: 11px !important;
+  }
+
+  .btn-col-add-task {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+
+  .kanban-tasks-list {
+    touch-action: pan-x pan-y !important;
+    min-height: 180px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    overflow: visible !important;
+  }
+
+  .kanban-col-empty {
+    padding: 32px 16px !important;
+    text-align: center !important;
+    color: var(--text-muted) !important;
+    font-size: 13px !important;
+  }
+
+  /* 3. Task Card */
+  .kanban-task-card {
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
+    touch-action: pan-x pan-y !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    cursor: pointer !important;
+  }
+
+  .kanban-task-card.is-lifting {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border-color: var(--accent) !important;
+  }
+
+  .kanban-task-card.card-just-added {
+    animation: highlightAdded 1.2s ease-out;
+  }
+
+  @keyframes highlightAdded {
+    0% { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-muted); }
+    100% { border-color: var(--border); box-shadow: none; }
+  }
+
+  .ktask-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    word-break: break-word !important;
+    margin-bottom: 6px !important;
+  }
+
+  .ktask-assignee-text {
+    font-size: 12px !important;
+    color: var(--text-muted) !important;
+    margin-bottom: 8px !important;
+  }
+
+  .ktask-divider {
+    border-top: 1px solid var(--border) !important;
+    margin: 8px 0 !important;
+  }
+
+  .ktask-bottom-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .ktask-user-meta {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .ktask-avatar-small {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 50% !important;
+    background: var(--border) !important;
+    font-size: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .ktask-handle {
+    font-family: var(--font-mono) !important;
+    font-size: 11px !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .ktask-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .ktask-actions .btn-task-action {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-muted) !important;
+  }
+
+  /* =========================================================================
+     PROJECT SHOWCASE TAB
+     ========================================================================= */
+  .project-showcase-box {
+    padding: 16px !important;
+  }
+
+  .showcase-header-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .showcase-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 4px 10px !important;
+    border-radius: 9999px !important;
+    background: rgba(62, 207, 142, 0.1) !important;
+    color: var(--accent) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .showcase-body-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .showcase-side-left,
+  .showcase-side-right {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .showcase-panel {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+  }
+
+  .showcase-card-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 12px !important;
+  }
+
+  .showcase-section-title {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: var(--text-secondary) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .showcase-panel .member-only-control {
+    min-height: 44px !important;
+    padding: 0 14px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Link Rows */
+  .showcase-quick-links {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .showcase-link-card {
+    display: flex !important;
+    align-items: center !important;
+    padding: 12px !important;
+    border-radius: 10px !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    gap: 10px !important;
+    text-decoration: none !important;
+    min-height: 52px !important;
+  }
+
+  .showcase-link-url {
+    font-size: 12px !important;
+    color: var(--accent) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 200px !important;
+  }
+
+  /* 16:9 Video Embed */
+  .showcase-video-item {
+    position: relative !important;
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    background: #000000 !important;
+  }
+
+  .showcase-video-item iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+  }
+
+  /* Markdown scrolling */
+  .showcase-markdown-body pre,
+  .showcase-markdown-body table {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  /* Dashed Empty States */
+  .showcase-empty-state {
+    padding: 24px 16px !important;
+    border: 1.5px dashed var(--border) !important;
+    border-radius: 10px !important;
+    text-align: center !important;
+    color: var(--text-muted) !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* =========================================================================
+     BOTTOM SHEETS (Reusable System)
+     ========================================================================= */
+  .mobile-bottom-sheet-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 250ms ease-out, visibility 250ms ease-out !important;
+  }
+
+  .mobile-bottom-sheet-overlay.open {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .mobile-bottom-sheet {
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-bottom: none !important;
+    border-radius: 20px 20px 0 0 !important;
+    width: 100% !important;
+    max-height: 92dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transform: translateY(100%) !important;
+    transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+    padding-bottom: var(--safe-bottom) !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5) !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+  }
+
+  .mobile-bottom-sheet-overlay.open .mobile-bottom-sheet {
+    transform: translateY(0) !important;
+  }
+
+  .sheet-drag-handle-bar {
+    width: 100% !important;
+    padding: 12px 0 6px 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    touch-action: none !important;
+    cursor: grab !important;
+  }
+
+  .sheet-drag-handle {
+    width: 38px !important;
+    height: 4px !important;
+    background: var(--border-hover) !important;
+    border-radius: 9999px !important;
+  }
+
+  .sheet-header {
+    padding: 10px 20px 14px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid var(--border) !important;
+    flex-shrink: 0 !important;
+  }
+
+  .sheet-title {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    margin: 0 !important;
+  }
+
+  .sheet-subtitle {
+    font-size: 12px !important;
+    color: var(--text-muted) !important;
+    margin-top: 2px !important;
+  }
+
+  .sheet-body {
+    padding: 20px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex: 1 1 auto !important;
+  }
+
+  .sheet-footer {
+    padding: 14px 20px !important;
+    border-top: 1px solid var(--border) !important;
+    display: flex !important;
+    gap: 12px !important;
+    flex-shrink: 0 !important;
+    background: var(--bg-elevated) !important;
+  }
+
+  .sheet-footer .btn {
+    flex: 1 !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Existing Modal Dialogs Converted to Sheets on Mobile */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-dialog {
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: none !important;
+    max-height: 92dvh !important;
+    padding: 16px 20px calc(16px + var(--safe-bottom)) 20px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Overflow Menu Sheet Items */
+  .sheet-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sheet-menu-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    min-height: 48px;
+  }
+
+  .sheet-menu-row.row-danger {
+    color: var(--danger);
+    border-color: var(--danger-border);
+    background: var(--danger-bg);
+  }
+
+  .sheet-menu-user-row {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* =========================================================================
+     TEAM ROOM CHAT SHEET (~92dvh)
+     ========================================================================= */
+  .chat-sheet-container {
+    height: 92dvh !important;
+    max-height: 92dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .chat-sheet-feed {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .chat-sheet-input-row {
+    padding: 10px 16px calc(10px + var(--safe-bottom)) 16px !important;
+    border-top: 1px solid var(--border) !important;
+    background: var(--bg-elevated) !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+  }
+
+  .chat-sheet-textarea {
+    flex: 1 1 auto !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    padding: 10px 12px !important;
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    max-height: 100px !important;
+    resize: none !important;
+  }
+
+  .chat-sheet-send-btn {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 10px !important;
+    background: var(--accent) !important;
+    color: #171717 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+  }
+
+  .chat-sheet-send-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+  }
+
+  .chat-new-msg-pill {
+    position: absolute;
+    bottom: 74px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: #171717;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  /* Chat Message Bubbles */
+  .chat-bubble-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .chat-timestamp-divider {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 8px 0 4px 0;
+  }
+
+  /* =========================================================================
+     TOASTS & OFFLINE BANNER
+     ========================================================================= */
+  .mobile-toast-container {
+    position: fixed !important;
+    bottom: calc(var(--safe-bottom) + 84px) !important;
+    left: 16px !important;
+    right: 16px !important;
+    z-index: 1100 !important;
+    pointer-events: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .mobile-toast {
+    pointer-events: auto !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+    font-size: 14px !important;
+    color: var(--text-primary) !important;
+    touch-action: pan-x !important;
+  }
+
+  .mobile-toast.toast-success {
+    border-left: 4px solid var(--success) !important;
+  }
+
+  .mobile-toast.toast-error {
+    border-left: 4px solid var(--danger) !important;
+  }
+
+  .mobile-toast.toast-info {
+    border-left: 4px solid var(--accent) !important;
+  }
+
+  .mobile-toast-undo-btn {
+    background: none !important;
+    border: none !important;
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+    cursor: pointer !important;
+    min-height: 36px !important;
+  }
+
+  /* Offline Banner */
+  .mobile-offline-banner {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 2000 !important;
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    padding: calc(var(--safe-top) + 6px) 16px 8px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    transform: translateY(-100%) !important;
+    transition: transform 200ms ease-out !important;
+  }
+
+  .mobile-offline-banner.visible {
+    transform: translateY(0) !important;
+  }
+
+  /* Pull-to-refresh spinner */
+  .mobile-ptr-indicator {
+    position: fixed !important;
+    top: calc(56px + var(--safe-top)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(-100px) scale(0.6) !important;
+    width: 36px !important;
+    height: 36px !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 50% !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    z-index: 999 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease, visibility 200ms ease !important;
+  }
+
+  .mobile-ptr-indicator.visible {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .mobile-ptr-indicator.pulling {
+    transition: opacity 150ms ease !important;
+  }
+
+  .mobile-ptr-spinner {
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid var(--border) !important;
+    border-top-color: var(--accent) !important;
+    border-radius: 50% !important;
+    animation: ptrSpin 0.7s linear infinite !important;
+    animation-play-state: paused !important;
+  }
+
+  .mobile-ptr-indicator.visible .mobile-ptr-spinner,
+  .mobile-ptr-indicator.refreshing .mobile-ptr-spinner {
+    animation-play-state: running !important;
+  }
+
+  @keyframes ptrSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Brainstorm Phase Single Column on Mobile */
+  .brainstorm-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  .brainstorm-main-area,
+  .team-roster-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .team-members-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .brainstorm-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Reduced Motion Override */
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .mobile-bottom-sheet-overlay,
+  .mobile-bottom-sheet,
+  .mobile-toast,
+  .mobile-offline-banner {
+    transition: opacity 100ms linear !important;
+    transform: none !important;
+  }
+
+  .mobile-ptr-indicator {
+    transition: opacity 100ms linear !important;
+  }
+
+  .mobile-bottom-sheet-overlay.open .mobile-bottom-sheet {
+    transform: none !important;
+  }
+}
