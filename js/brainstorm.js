@@ -634,6 +634,9 @@
       const voteCount = pollVotes.length;
       const hasVoted = currentUser ? pollVotes.some(v => v.user_id === currentUser.id) : false;
 
+      const isAuthor = Boolean(currentUser && poll.created_by && poll.created_by === currentUser.id);
+      const canEdit = Boolean(currentUser && (isAuthor || isLeader));
+
       const author = authorMap.get(poll.created_by) || {};
       const authorUsername = author.username || 'hacker';
       const authorDisplayName = author.display_name || authorUsername;
@@ -654,45 +657,105 @@
           </button>`
         : '';
 
+      // Edit Button: Visible ONLY if author OR leader
+      const editButtonMarkup = canEdit
+        ? `<button type="button" class="btn-edit-idea" data-poll-id="${escapeHtml(poll.id)}" title="Edit Idea">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Edit</span>
+          </button>`
+        : '';
+
       return `
-        <div class="idea-poll-card" data-poll-id="${escapeHtml(poll.id)}">
-          <div>
-            <div class="idea-poll-header">
-              <h3 class="idea-poll-title">${escapeHtml(poll.title)}</h3>
-              <span class="idea-votes-count">
-                <span>▲</span>
-                <span>${voteCount} ${voteCount === 1 ? 'vote' : 'votes'}</span>
-              </span>
+        <div class="idea-poll-card" id="ideaCard-${escapeHtml(poll.id)}" data-poll-id="${escapeHtml(poll.id)}">
+          <!-- View State -->
+          <div class="idea-card-view" id="ideaCardView-${escapeHtml(poll.id)}">
+            <div>
+              <div class="idea-poll-header">
+                <h3 class="idea-poll-title">${escapeHtml(poll.title)}</h3>
+                <div class="idea-header-badges">
+                  <span class="idea-votes-count">
+                    <span>▲</span>
+                    <span>${voteCount} ${voteCount === 1 ? 'vote' : 'votes'}</span>
+                  </span>
+                  ${editButtonMarkup}
+                </div>
+              </div>
+
+              <p class="idea-poll-desc">${escapeHtml(poll.description || 'No description provided.')}</p>
             </div>
 
-            <p class="idea-poll-desc">${escapeHtml(poll.description || 'No description provided.')}</p>
+            <div>
+              <div class="idea-poll-author">
+                ${authorAvatarMarkup}
+                <span>Pitched by <strong>@${escapeHtml(authorUsername)}</strong></span>
+              </div>
+
+              <div class="idea-poll-actions">
+                <!-- Vote Action (Member-only) -->
+                <button 
+                  class="${voteBtnClass} member-only-control btn-trigger-vote" 
+                  data-poll-id="${escapeHtml(poll.id)}" 
+                  data-has-voted="${hasVoted ? 'true' : 'false'}"
+                >
+                  ${voteBtnText}
+                </button>
+
+                <!-- Leader Lock Idea Button -->
+                ${lockButtonMarkup}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div class="idea-poll-author">
-              ${authorAvatarMarkup}
-              <span>Pitched by <strong>@${escapeHtml(authorUsername)}</strong></span>
-            </div>
+          <!-- Inline Edit State (Author or Leader only) -->
+          ${canEdit ? `
+            <div class="idea-card-edit hidden" id="ideaCardEdit-${escapeHtml(poll.id)}">
+              <div>
+                <div class="idea-edit-header">
+                  <h4 class="idea-edit-heading">Edit Idea Concept</h4>
+                  <span class="idea-edit-role-badge">${isLeader && !isAuthor ? 'Leader' : 'Author'}</span>
+                </div>
 
-            <div class="idea-poll-actions">
-              <!-- Vote Action (Member-only) -->
-              <button 
-                class="${voteBtnClass} member-only-control btn-trigger-vote" 
-                data-poll-id="${escapeHtml(poll.id)}" 
-                data-has-voted="${hasVoted ? 'true' : 'false'}"
-              >
-                ${voteBtnText}
-              </button>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label class="form-label" style="font-size: 11px;">Idea Title *</label>
+                  <input 
+                    type="text" 
+                    class="form-input form-input-standalone input-edit-idea-title" 
+                    id="editIdeaTitle-${escapeHtml(poll.id)}"
+                    value="${escapeHtml(poll.title)}" 
+                    maxlength="120" 
+                    required
+                  >
+                </div>
 
-              <!-- Leader Lock Idea Button -->
-              ${lockButtonMarkup}
+                <div class="form-group" style="margin-bottom: 8px;">
+                  <label class="form-label" style="font-size: 11px;">Concept Description *</label>
+                  <textarea 
+                    class="form-input form-input-standalone input-edit-idea-desc" 
+                    id="editIdeaDesc-${escapeHtml(poll.id)}"
+                    rows="4" 
+                    required
+                  >${escapeHtml(poll.description || '')}</textarea>
+                </div>
+              </div>
+
+              <div class="idea-edit-footer">
+                <button type="button" class="btn btn-outline btn-sm btn-cancel-idea-edit" data-poll-id="${escapeHtml(poll.id)}">
+                  Cancel
+                </button>
+                <button type="button" class="btn btn-primary btn-sm btn-save-idea-edit" data-poll-id="${escapeHtml(poll.id)}">
+                  <span>Save Changes</span>
+                </button>
+              </div>
             </div>
-          </div>
+          ` : ''}
         </div>
       `;
     }).join('');
 
-    // Bind event listeners for vote buttons & lock idea buttons
+    // Bind event listeners for vote buttons, lock idea buttons, and edit actions
     bindPollCardActions();
   }
 
@@ -722,6 +785,172 @@
         await handleLockIdea(pollId, pollTitle, pollDesc);
       });
     });
+
+    // 3. Edit Idea Button -> Open Inline Edit Mode
+    const editBtns = document.querySelectorAll('.btn-edit-idea');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pollId = btn.getAttribute('data-poll-id');
+        openIdeaEditForm(pollId);
+      });
+    });
+
+    // 4. Cancel Edit Button -> Revert to View Mode
+    const cancelEditBtns = document.querySelectorAll('.btn-cancel-idea-edit');
+    cancelEditBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pollId = btn.getAttribute('data-poll-id');
+        closeIdeaEditForm(pollId);
+      });
+    });
+
+    // 5. Save Edit Button -> Save changes to database
+    const saveEditBtns = document.querySelectorAll('.btn-save-idea-edit');
+    saveEditBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const pollId = btn.getAttribute('data-poll-id');
+        await handleSaveIdeaEdit(pollId);
+      });
+    });
+
+    // 6. Keyboard Shortcuts inside Edit Inputs (Escape to cancel, Ctrl/Cmd+Enter to save)
+    const editCards = document.querySelectorAll('.idea-card-edit');
+    editCards.forEach(card => {
+      card.addEventListener('keydown', (e) => {
+        const pollId = card.id.replace('ideaCardEdit-', '');
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeIdeaEditForm(pollId);
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          handleSaveIdeaEdit(pollId);
+        }
+      });
+    });
+  }
+
+  /**
+   * Open inline edit form for an idea card (closes any other open edit forms)
+   */
+  function openIdeaEditForm(pollId) {
+    // Close other open idea edits first
+    document.querySelectorAll('.idea-card-edit').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.idea-card-view').forEach(el => el.classList.remove('hidden'));
+
+    const viewEl = document.getElementById(`ideaCardView-${pollId}`);
+    const editEl = document.getElementById(`ideaCardEdit-${pollId}`);
+    const titleInput = document.getElementById(`editIdeaTitle-${pollId}`);
+
+    if (viewEl && editEl) {
+      viewEl.classList.add('hidden');
+      editEl.classList.remove('hidden');
+      if (titleInput) {
+        titleInput.focus();
+        titleInput.select();
+      }
+    }
+  }
+
+  /**
+   * Close inline edit form and restore original card values
+   */
+  function closeIdeaEditForm(pollId) {
+    const viewEl = document.getElementById(`ideaCardView-${pollId}`);
+    const editEl = document.getElementById(`ideaCardEdit-${pollId}`);
+    const poll = cachedPolls.find(p => p.id === pollId);
+
+    if (poll) {
+      const titleInput = document.getElementById(`editIdeaTitle-${pollId}`);
+      const descInput = document.getElementById(`editIdeaDesc-${pollId}`);
+      if (titleInput) titleInput.value = poll.title;
+      if (descInput) descInput.value = poll.description || '';
+    }
+
+    if (viewEl && editEl) {
+      editEl.classList.add('hidden');
+      viewEl.classList.remove('hidden');
+    }
+  }
+
+  /**
+   * Save Edited Idea (restricted to idea author or team leader)
+   */
+  async function handleSaveIdeaEdit(pollId) {
+    if (!window.supabaseClient || !currentUser) return;
+
+    const poll = cachedPolls.find(p => p.id === pollId);
+    if (!poll) return;
+
+    const isAuthor = Boolean(currentUser && poll.created_by && poll.created_by === currentUser.id);
+    if (!isAuthor && !isLeader) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('Only the idea author or team leader can edit this idea.', 'error');
+      }
+      return;
+    }
+
+    const titleInput = document.getElementById(`editIdeaTitle-${pollId}`);
+    const descInput = document.getElementById(`editIdeaDesc-${pollId}`);
+    const saveBtn = document.querySelector(`.btn-save-idea-edit[data-poll-id="${pollId}"]`);
+
+    const newTitle = (titleInput?.value || '').trim();
+    const newDesc = (descInput?.value || '').trim();
+
+    if (!newTitle) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('Idea title cannot be empty.', 'error');
+      }
+      titleInput?.focus();
+      return;
+    }
+
+    if (!newDesc) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('Please provide a concept description.', 'error');
+      }
+      descInput?.focus();
+      return;
+    }
+
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span>Saving...</span>';
+    }
+
+    try {
+      const { error } = await window.supabaseClient
+        .from('idea_polls')
+        .update({
+          title: newTitle,
+          description: newDesc
+        })
+        .eq('id', pollId);
+
+      if (error) throw error;
+
+      // Update cached array immediately
+      poll.title = newTitle;
+      poll.description = newDesc;
+
+      if (typeof window.showToast === 'function') {
+        window.showToast('Idea updated successfully!', 'success');
+      }
+
+      await loadIdeaPolls();
+
+    } catch (err) {
+      console.error('Error updating idea poll:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err.message || 'Failed to update idea. Please check database permissions.', 'error');
+      }
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<span>Save Changes</span>';
+      }
+    }
   }
 
   /**
